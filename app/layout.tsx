@@ -8,26 +8,28 @@ const lora = Lora({ subsets: ["latin"], weight: ["400", "500", "600"], style: ["
 
 const siteUrl = "https://www.ambroisepartners.com";
 
+const description = "Independent strategic and financial advisory dedicated to healthcare innovation: M&A, capital raising, partnerships & licensing. Paris · London.";
+
 export const metadata: Metadata = {
-  title: "Ambroise Partners - Healthcare Financial Advisory",
-  description: "Strategic and transactional advisory for healthcare companies. M&A, capital raising, partnerships & licensing.",
+  title: "Ambroise Partners | Healthcare Financial Advisory",
+  description,
   metadataBase: new URL(siteUrl),
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Ambroise Partners - Healthcare Financial Advisory",
-    description: "Strategic and transactional advisory for healthcare companies. M&A, capital raising, partnerships & licensing.",
+    title: "Ambroise Partners | Healthcare Financial Advisory",
+    description,
     url: siteUrl,
     siteName: "Ambroise Partners",
-    locale: "en_US",
+    locale: "en_GB",
     type: "website",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Ambroise Partners" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Ambroise Partners: independent strategic and financial advisory dedicated to healthcare innovation" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ambroise Partners - Healthcare Financial Advisory",
-    description: "Strategic and transactional advisory for healthcare companies.",
-    images: ["/og-image.svg"],
+    title: "Ambroise Partners | Healthcare Financial Advisory",
+    description,
+    images: ["/og-image.png"],
   },
-  keywords: ["healthcare advisory", "M&A", "capital raising", "partnerships", "licensing", "pharma", "biotech", "medtech"],
   authors: [{ name: "Ambroise Partners" }],
 };
 
@@ -39,7 +41,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable} ${lora.variable}`}>
       <body className="antialiased">
-        <div id="page-loader" className="page-loader" />
         {children}
         <Analytics />
       </body>
