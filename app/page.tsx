@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { COMPANY } from './lib/company';
@@ -295,6 +295,14 @@ function ExpertiseSection() {
 
 /* ─── Services Section ─── */
 /* Four service lines, same names everywhere (hero, cards, footer, deck). */
+/* Line icons (24×24, stroke) for the four business lines */
+const SVC_ICONS: Record<string, ReactNode> = {
+  ma: <><circle cx="9" cy="12" r="5.5" /><circle cx="15" cy="12" r="5.5" /></>,
+  capital: <><path d="M3 17l6-6 4 4 7-7" /><path d="M14 8h6v6" /></>,
+  licensing: <><rect x="2.5" y="9" width="11" height="6" rx="3" /><rect x="10.5" y="9" width="11" height="6" rx="3" /></>,
+  advisory: <><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></>,
+};
+
 const SERVICES = [
   { id: 'ma', title: 'M&A Advisory', description: 'Sell-side, buy-side and transaction advisory across the global healthcare ecosystem. We design and manage disciplined processes focused on value maximisation and execution certainty.', tags: ['Sell-side', 'Buy-side', 'Carve-outs', 'Cross-border'] },
   { id: 'capital', title: 'Capital Raising', description: 'Equity financings from seed to growth stage and public markets. We identify the specialist healthcare investors, venture, growth and private equity funds, best placed to secure the right capital at the right valuation.', tags: ['Series A–D', 'Growth Equity', 'Private Placements', 'IPO & Follow-on'] },
@@ -314,7 +322,12 @@ function ServicesSection() {
         <div className="svc-grid">
           {SERVICES.map((s, i) => (
             <article key={s.id} className={`svc-card reveal reveal-d${i + 1}`}>
-              <span className="svc-num">{String(i + 1).padStart(2, '0')}</span>
+              <div className="svc-top">
+                <span className="svc-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{SVC_ICONS[s.id]}</svg>
+                </span>
+                <span className="svc-num">{String(i + 1).padStart(2, '0')}</span>
+              </div>
               <h3 className="svc-title">{s.title}</h3>
               <p className="svc-desc">{s.description}</p>
               <ul className="svc-tags" aria-label={`${s.title} services`}>
@@ -749,8 +762,9 @@ export default function AmbroisePartnersModern() {
       }
       if (fadeEl) {
         /* The DNA disperses while the hero lightens from navy to slate to the next section's light
-           background, so the two meet without a seam as Services comes up. */
-        const fadeOpacity = Math.min(Math.max(scrollProgress / 0.25, 0), 1);
+           background, so the two meet without a seam as Services comes up. The particles are drawn
+           above that gradient (canvas z-index 2), so the scattered dots stay visible on the way down. */
+        const fadeOpacity = Math.min(Math.max(scrollProgress / 0.4, 0), 1);
         fadeEl.style.opacity = String(fadeOpacity);
         /* Fade the headline and tags out before the background turns light */
         const contentOpacity = String(Math.max(0, 1 - fadeOpacity * 1.6));
@@ -883,7 +897,7 @@ export default function AmbroisePartnersModern() {
         .nav-cta{
           margin-left:.5rem;
           background:#fff!important;color:var(--ink)!important;
-          padding:.65rem 1.7rem!important;border-radius:9999px;
+          padding:.5rem 1.15rem!important;border-radius:9999px;
           display:inline-flex;align-items:center;justify-content:center;
           font-size:var(--fs-small)!important;font-weight:500!important;
           border:1.5px solid #fff;
@@ -906,7 +920,7 @@ export default function AmbroisePartnersModern() {
           /* Richer deep-navy background with subtle radial warmth for life-science feel */
           background:radial-gradient(ellipse 80% 60% at 50% 40%, #05122e 0%, #020a1e 50%, #010510 100%);
         }
-        #hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;}
+        #hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;}
         /* Muted navy → slate → the light background of the next section (a saturated blue looked loud) */
         #hero-fade{
           position:absolute;inset:0;z-index:1;pointer-events:none;
@@ -976,7 +990,7 @@ export default function AmbroisePartnersModern() {
         .btn-secondary:hover{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.07);}
         .hero-footnote{margin-top:1.2rem;font-size:var(--fs-xs);color:rgba(255,255,255,.38);font-weight:400;opacity:0;animation:fadeUp .9s .9s var(--ease) forwards;}
 
-        .hero-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;will-change:opacity;}
+        .hero-content{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;will-change:opacity;}
         .hero-bottom{display:flex;flex-direction:column;align-items:center;gap:1.4rem;}
         .hero-tags span{text-shadow:0 1px 12px rgba(3,10,36,.6);}
 
@@ -986,7 +1000,14 @@ export default function AmbroisePartnersModern() {
         /* ── SERVICES CARDS ── */
         .svc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;}
         .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:var(--radius);padding:1.6rem 1.4rem 1.5rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
-        .svc-card:hover{border-color:#c9d3e3;box-shadow:0 12px 30px rgba(3,10,36,.06);}
+        .svc-card{position:relative;overflow:hidden;}
+        .svc-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--blue));transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease);}
+        .svc-card:hover{border-color:#c9d3e3;box-shadow:0 18px 40px rgba(3,10,36,.09);}
+        .svc-card.visible:hover{transform:translateY(-4px);}
+        .svc-card:hover::before{transform:scaleX(1);}
+        .svc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;}
+        .svc-icon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eaf0f8;color:var(--navy);transition:background .3s,color .3s;}
+        .svc-card:hover .svc-icon{background:var(--navy);color:#fff;}
         .svc-num{font-family:var(--sans);font-size:var(--fs-xs);font-weight:500;letter-spacing:.08em;color:var(--blue);}
         .svc-title{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;line-height:1.15;}
         .svc-desc{color:var(--muted);font-size:var(--fs-body);line-height:1.65;font-weight:400;flex-grow:1;}

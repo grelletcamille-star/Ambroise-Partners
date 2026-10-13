@@ -16,7 +16,7 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 - **Coins arrondis** : un seul rayon (`--radius`, 8 px) pour toutes les boîtes (cartes, photos, champs du formulaire) ; les boutons restent en pilule.
 - **Typographie** : deux familles (Lora pour les titres, DM Sans pour le texte), deux graisses chacune et une échelle de six tailles déclarée une fois (`--fs-*`) ; les polices chargées passent de 7 à 4 fichiers. Chiffres clés plus petits, sans séparateurs ; lien LinkedIn de l'équipe sans cadre.
 - **Fonds** : alternance bleu clair / blanc (Services, Approach, Expertise et secteurs, Process), équipe sur fond marine ; le dégradé du hero passe par un bleu ardoise plus sourd.
-- **Services** : quatre cartes sur une ligne, toutes visibles au lieu d'onglets qui défilaient. *Private Capital Raising* et *Public Capital Markets* sont regroupés en *Capital Raising*, comme dans le deck.
+- **Services** : quatre cartes sur une ligne, chacune avec une icône au trait et un survol animé (filet bleu, icône inversée), toutes visibles au lieu d'onglets qui défilaient. *Private Capital Raising* et *Public Capital Markets* sont regroupés en *Capital Raising*, comme dans le deck.
 - **Détails** :
   - boutons en bleu marine ;
   - contraste du footer corrigé ;
