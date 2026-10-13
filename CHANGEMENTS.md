@@ -12,6 +12,7 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
   - la ligne de services est alignée sur les 4 lignes de métier ;
   - le texte s'efface avant que le fond ne devienne blanc.
 - **Mise en page** : sections resserrées pour tenir chacune dans une fenêtre (titres, marges, Approach en 3 colonnes, photos d'expertise moins hautes), logo d'une seule couleur.
+- **Our Approach** : trois illustrations au trait (molécule, réseau Investors / Pharma / MedTech / Acquirers autour d’AP, jalons Mandate → Closing) qui se dessinent à l’arrivée dans la section.
 - **Services** : quatre cartes sur une ligne, toutes visibles au lieu d'onglets qui défilaient. *Private Capital Raising* et *Public Capital Markets* sont regroupés en *Capital Raising*, comme dans le deck.
 - **Photos d'expertise** : un traitement bichrome bleu marine unifie les six images.
 - **Détails** :
