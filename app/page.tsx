@@ -2,6 +2,14 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { COMPANY } from './lib/company';
+import LogoMark from './components/LogoMark';
+
+/* Height of the scroll-driven DNA animation before the page moves on. */
+const STICKY_DESKTOP = 700;
+const STICKY_MOBILE = 400;
+const stickyPx = () => (window.innerWidth <= 600 ? STICKY_MOBILE : STICKY_DESKTOP);
 
 /* ─── Animated canvas for each approach pillar ─── */
 function ApproachCanvas({ type }: { type: 'brain' | 'network' | 'curve' }) {
@@ -184,7 +192,7 @@ const DOMAINS = [
 function ExpertiseSection() {
   const [hovered, setHovered] = useState<number | null>(null);
   return (
-    <section id="domains" style={{ background: 'var(--white)', padding: '5rem 2.5vw 1.5rem' }}>
+    <section id="domains" style={{ background: 'var(--accent-bg)', padding: '5rem 2.5vw 5rem' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What we cover</span>
@@ -202,6 +210,7 @@ function ExpertiseSection() {
                 onMouseEnter={() => setHovered(i)}
               >
                 <Image src={dom.image} alt={dom.name} fill style={{ objectFit: 'cover' }} sizes="(max-width:600px) 50vw, 20vw" className="domain-img" />
+                <div className="domain-tint" aria-hidden="true" />
                 <div className="domain-overlay" />
                 <div className="domain-label">
                   <h3 className="domain-name">{dom.name}</h3>
@@ -217,71 +226,134 @@ function ExpertiseSection() {
 }
 
 /* ─── Services Section ─── */
+/* Four service lines, same names everywhere (hero, cards, footer, deck). */
 const SERVICES = [
-  { id: 'ma', title: 'M&A', description: 'Sell-side, buy-side and transaction advisory across the global healthcare ecosystem. We design and manage disciplined processes focused on value maximisation and execution certainty.', tags: ['Sell-side', 'Buy-side', 'Carve-outs', 'Cross-border'] },
-  { id: 'capital', title: 'Private Capital Raising', description: 'Access to a curated network of specialist healthcare investors, venture capital, growth equity and private equity, to secure the right capital at the right valuation.', tags: ['Series A–D', 'Growth Equity', 'Private Equity', 'Venture'] },
-  { id: 'licensing', title: 'Partnerships & Licensing', description: 'Identification, negotiation and structuring of licensing agreements, codevelopment partnerships and commercial collaborations with pharma and medtech corporates.', tags: ['Licensing', 'Co\u2011development', 'Commercialisation', 'JVs'] },
-  { id: 'advisory', title: 'Corporate Advisory', description: 'Independent strategic advice on corporate positioning, portfolio strategy, capital structure and value creation, tailored to each stage of a company\'s lifecycle.', tags: ['Strategy', 'Valuation', 'Governance', 'Restructuring'] },
-  { id: 'public', title: 'Public Capital Markets', description: 'Advisory support for IPO readiness, secondary offerings, investor relations strategy and public market positioning for healthcare companies seeking or maintaining a listing.', tags: ['IPO', 'Follow-on', 'IR Strategy', 'Dual-track'] },
+  { id: 'ma', title: 'M&A Advisory', description: 'Sell-side, buy-side and transaction advisory across the global healthcare ecosystem. We design and manage disciplined processes focused on value maximisation and execution certainty.', tags: ['Sell-side', 'Buy-side', 'Carve-outs', 'Cross-border'] },
+  { id: 'capital', title: 'Capital Raising', description: 'Equity financings from seed to growth stage and public markets. We identify the specialist healthcare investors, venture, growth and private equity funds, best placed to secure the right capital at the right valuation.', tags: ['Series A–D', 'Growth Equity', 'Private Placements', 'IPO & Follow-on'] },
+  { id: 'licensing', title: 'Partnerships & Licensing', description: 'Identification, negotiation and structuring of licensing agreements, co-development partnerships and commercial collaborations with pharma and medtech corporates.', tags: ['Licensing', 'Co‑development', 'Commercialisation', 'JVs'] },
+  { id: 'advisory', title: 'Corporate Advisory', description: 'Independent strategic advice to management teams and boards on financing strategy, business development, portfolio and capital structure, tailored to each stage of a company’s lifecycle.', tags: ['Strategy', 'Valuation', 'Governance', 'Investor Relations'] },
 ];
 
 function ServicesSection() {
-  const [active, setActive] = useState<number>(0);
-  const pausedRef = useRef(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!pausedRef.current) {
-        setActive(prev => (prev + 1) % SERVICES.length);
-      }
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <section id="services" style={{ background: 'var(--white)', padding: '0 2.5vw 2rem', marginTop: '-2rem', minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
+    <section id="services" style={{ background: 'var(--white)', padding: '5rem 2.5vw 5rem' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        {/* Header */}
         <div className="section-head reveal">
           <span className="eyebrow">What we do</span>
           <h2 className="section-title">Our Services</h2>
           <p className="section-lede">We partner with healthcare companies at every stage, delivering tailored strategic and transactional advisory.</p>
         </div>
-
-        {/* Tab line */}
-        <div className="svc-tabs reveal"
-          onMouseEnter={() => pausedRef.current = true}
-          onMouseLeave={() => pausedRef.current = false}
-        >
+        <div className="svc-grid">
           {SERVICES.map((s, i) => (
-            <button
-              key={s.id}
-              className={`svc-tab${active === i ? ' svc-tab--active' : ''}`}
-              onClick={() => { pausedRef.current = true; setActive(i); }}
-            >
-              {s.title}
-            </button>
+            <article key={s.id} className={`svc-card reveal reveal-d${i + 1}`}>
+              <span className="svc-num">{String(i + 1).padStart(2, '0')}</span>
+              <h3 className="svc-title">{s.title}</h3>
+              <p className="svc-desc">{s.description}</p>
+              <ul className="svc-tags" aria-label={`${s.title} services`}>
+                {s.tags.map(tag => <li key={tag} className="svc-tag">{tag}</li>)}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Key figures (shown under the hero) ─── */
+const FIGURES = [
+  { value: '$90bn+', label: 'transaction value advised' },
+  { value: '15+', label: 'years in healthcare investment banking' },
+  { value: '100+', label: 'healthcare companies advised' },
+  { value: 'Paris · London', label: 'offices', small: true },
+];
+
+function FiguresBand() {
+  return (
+    <section className="figures" aria-label="Key figures">
+      <div className="figures-inner">
+        {FIGURES.map(f => (
+          <div key={f.label} className="figure reveal">
+            <span className={`figure-value${f.small ? ' figure-value--sm' : ''}`}>{f.value}</span>
+            <span className="figure-label">{f.label}</span>
+          </div>
+        ))}
+      </div>
+      <p className="figures-note">Including transactions executed by team members in previous roles.</p>
+    </section>
+  );
+}
+
+/* ─── Team ─── */
+type Member = { name: string; role: string; initials: string; photo?: string; linkedin?: string; bio: string[]; education: string; formerly: string };
+
+/* To add a photo: put the file in /public/team/ (square, at least 600×600) and set `photo: '/team/<file>.jpg'`.
+   To add a LinkedIn link: set `linkedin: 'https://www.linkedin.com/in/...'`. */
+const TEAM: Member[] = [
+  {
+    name: 'Camille Grellet',
+    role: 'Founding Partner',
+    initials: 'CG',
+    linkedin: 'https://www.linkedin.com/in/camille-grellet-694b785b/',
+    formerly: 'Cambon Partners · Lazard · Nomura',
+    bio: [
+      'Healthcare investment banker with more than ten years of experience. Camille previously built the healthcare practice at Cambon Partners, after serving as Vice President in Lazard’s Global Healthcare Group and working in Nomura’s healthcare team.',
+      'Her experience spans strategic transactions and carve-outs for global healthcare groups, advisory work for institutional investors, and financing, M&A and corporate-readiness support for healthcare companies.',
+    ],
+    education: 'Biomedical Engineering, Imperial College London (with distinction)',
+  },
+  {
+    name: 'Thomas Guillot',
+    role: 'Associate Partner',
+    initials: 'TG',
+    linkedin: 'https://www.linkedin.com/in/thomas-g-4956631b/',
+    formerly: 'Degroof Petercam · Kepler Cheuvreux · Société Générale',
+    bio: [
+      'More than ten years in healthcare finance. Thomas was previously in healthcare investment banking at Degroof Petercam, after investment banking and biotech equity research roles at Kepler Cheuvreux and Société Générale.',
+      'He has worked on numerous financings, including IPOs and private placements, and on strategic M&A mandates for biotech and medtech companies, and was formerly Head of Investor Relations at a listed biotech.',
+    ],
+    education: 'PharmD, Université de Rouen · MSc in Management, ESSEC Business School',
+  },
+];
+
+/* Companies advised by team members, including in previous roles (from the firm's credentials). */
+const EXPERIENCE = ['Takeda', 'Sanofi', 'Ipsen', 'STADA', 'Sebia', 'Sysmex', 'Valneva', 'Innate Pharma', 'SERB', 'Ceva', 'Median', 'George Medicines', 'OSE Immunotherapeutics', 'Medincell', 'Theradiag', 'Integragen', 'Crossject', 'EOS imaging', 'Onward Medical', 'Lumenis', 'Medartis', 'Mauna Kea', 'Asker', 'Havea'];
+
+function TeamSection() {
+  return (
+    <section id="team" style={{ background: 'var(--white)', padding: '5rem 2.5vw' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+        <div className="section-head reveal">
+          <span className="eyebrow">Who we are</span>
+          <h2 className="section-title">A senior team, directly involved at every stage</h2>
+          <p className="section-lede">Transactional and scientific expertise, strengthened by a network of experts mobilised according to the needs of each mandate.</p>
+        </div>
+        <div className="team-grid">
+          {TEAM.map((m, i) => (
+            <article key={m.name} className={`member reveal reveal-d${i + 1}`}>
+              <div className="member-head">
+                {m.photo
+                  ? <Image src={m.photo} alt={m.name} width={96} height={96} className="member-photo" />
+                  : <span className="member-photo member-initials" aria-hidden="true">{m.initials}</span>}
+                <div>
+                  <h3 className="member-name">{m.name}</h3>
+                  <p className="member-role">{m.role}</p>
+                  <p className="member-formerly">{m.formerly}</p>
+                </div>
+              </div>
+              {m.bio.map(p => <p key={p.slice(0, 24)} className="member-bio">{p}</p>)}
+              <p className="member-edu">{m.education}</p>
+              {m.linkedin && <a className="member-link" href={m.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>}
+            </article>
           ))}
         </div>
 
-        {/* Panel */}
-        <div
-          key={SERVICES[active].id}
-          className="svc-panel-anim"
-          style={{ padding: '64px 0', display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-start', gap: 48 }}
-          onMouseEnter={() => pausedRef.current = true}
-          onMouseLeave={() => pausedRef.current = false}
-        >
-          <div style={{ width: '100%' }}>
-            <p className="svc-desc" style={{ fontSize: 18, lineHeight: 1.8, color: 'var(--muted)', margin: 0 }}>
-              {SERVICES[active].description}
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, justifyContent: 'flex-start' }}>
-            {SERVICES[active].tags.map((tag, i) => (
-              <span key={tag} className="svc-tag" style={{ animationDelay: `${0.06 * i}s` }}>{tag}</span>
-            ))}
-          </div>
+        <div className="exp reveal">
+          <h3 className="exp-title">Selected experience</h3>
+          <p className="exp-note">Companies advised by members of our team, including in previous roles.</p>
+          <ul className="exp-list">
+            {EXPERIENCE.map(name => <li key={name}>{name}</li>)}
+          </ul>
         </div>
       </div>
     </section>
@@ -492,7 +564,7 @@ export default function AmbroisePartnersModern() {
     if (!navOuter || !hero) return;
 
     const onScroll = () => {
-      navOuter.classList.toggle('nav-scrolled', window.scrollY > hero.offsetHeight + 1200);
+      navOuter.classList.toggle('nav-scrolled', window.scrollY > stickyPx() + hero.offsetHeight - 80);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -508,8 +580,9 @@ export default function AmbroisePartnersModern() {
 
     const ctx = canvas.getContext('2d')!;
     const isMobile = window.innerWidth <= 600;
+    const heroContent = hero.querySelector<HTMLElement>('.hero-content');
     const PARTICLE_COUNT = isMobile ? 18000 : 40000;
-    const STICKY_PX = isMobile ? 800 : 1500;
+    const STICKY_PX = stickyPx();
     let W = 0, H = 0, scrollProgress = 0, raf = 0;
 
     let fadeEl: HTMLElement | null = null;
@@ -659,6 +732,8 @@ export default function AmbroisePartnersModern() {
       if (fadeEl) {
         const fadeOpacity = Math.min(Math.max((scrollProgress - 0.15) / 0.60, 0), 1);
         fadeEl.style.opacity = String(fadeOpacity);
+        /* Fade the headline and buttons out before the background turns white */
+        if (heroContent) heroContent.style.opacity = String(Math.max(0, 1 - fadeOpacity * 1.6));
       }
       raf=requestAnimationFrame(animate);
     }
@@ -723,14 +798,19 @@ export default function AmbroisePartnersModern() {
     name: 'Ambroise Partners',
     description: 'Strategic and transactional advisory for healthcare companies.',
     url: 'https://www.ambroisepartners.com',
-    email: 'contact@ambroisepartners.com',
+    email: COMPANY.email,
+    address: { '@type': 'PostalAddress', streetAddress: '7 rue Paul Saunière', postalCode: '75016', addressLocality: 'Paris', addressCountry: 'FR' },
+    founder: { '@type': 'Person', name: 'Camille Grellet' },
+    sameAs: [COMPANY.linkedin],
     areaServed: 'Global',
-    serviceType: ['M&A Advisory', 'Capital Raising', 'Partnerships & Licensing', 'Corporate Advisory', 'Public Capital Markets'],
+    serviceType: SERVICES.map(s => s.title),
     industry: 'Healthcare',
   };
 
   return (
     <>
+      {/* Covers the page until the hero animation is ready (removed in the first effect above) */}
+      <div id="page-loader" className="page-loader" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <style jsx global>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -744,6 +824,8 @@ export default function AmbroisePartnersModern() {
           --line:   #E5E5E3;
           --dark:   #0D0D0D;
           --accent-bg: #F7FBFE;
+          --navy:   #030a24;
+          --navy-hover: #0b1a4a;
           --sans:   var(--font-sans),-apple-system,sans-serif;
           --serif:  var(--font-serif),Georgia,serif;
           --ease:   cubic-bezier(0.22,0.61,0.36,1);
@@ -764,7 +846,13 @@ export default function AmbroisePartnersModern() {
         .logo-wrap{display:flex;align-items:center;gap:.7rem;}
         .logo-ap{font-family:'Lora',Georgia,serif;font-weight:500;font-size:1.55rem;letter-spacing:-.01em;color:#fff;transition:color .35s;}
         .logo-sep{width:1px;height:16px;background:rgba(255,255,255,0.25);transition:background .35s;}
-        .logo-name{font-size:1.05rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#fff;transition:color .35s;}
+        .logo-name{display:flex;flex-direction:column;gap:4px;font-size:.78rem;letter-spacing:.28em;text-transform:uppercase;line-height:1;color:#fff;transition:color .35s;}
+        .logo-l1{font-weight:600;}
+        .logo-l2{font-weight:400;opacity:.82;}
+        .logo-mark{width:56px;height:35px;color:#fff;flex-shrink:0;transition:color .35s;}
+        .nav-scrolled .logo-mark{color:var(--navy);}
+        .nav-scrolled .logo-name{color:var(--navy);}
+        .nav-scrolled .logo-l2{color:var(--blue);opacity:1;}
         .nav-links{display:flex;gap:1.2rem;align-items:center;}
         .nav-links a{font-size:.88rem;font-weight:500;color:#fff;padding:.5rem 1rem;transition:color .18s;letter-spacing:.02em;}
         .nav-links a:hover{color:#fff;}
@@ -781,11 +869,10 @@ export default function AmbroisePartnersModern() {
         .nav-scrolled nav{background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 12px rgba(0,0,0,0.06);}
         .nav-scrolled .logo-ap{color:var(--ink);}
         .nav-scrolled .logo-sep{background:var(--line);}
-        .nav-scrolled .logo-name{color:var(--ink);}
         .nav-scrolled .nav-links a{color:var(--muted);}
         .nav-scrolled .nav-links a:hover{color:var(--ink);}
-        .nav-scrolled .nav-cta{background:var(--ink)!important;color:#fff!important;border-radius:9999px;border-color:var(--ink);}
-        .nav-scrolled .nav-cta:hover,.nav-scrolled .nav-cta:active{background:#030a24!important;border-color:#030a24;}
+        .nav-scrolled .nav-cta{background:var(--navy)!important;color:#fff!important;border-radius:9999px;border-color:var(--navy);}
+        .nav-scrolled .nav-cta:hover,.nav-scrolled .nav-cta:active{background:var(--navy-hover)!important;border-color:var(--navy-hover);}
 
         /* ── HERO ── */
         .hero{
@@ -870,6 +957,46 @@ export default function AmbroisePartnersModern() {
         .btn-secondary:hover{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.07);}
         .hero-footnote{margin-top:1.2rem;font-size:.78rem;color:rgba(255,255,255,.38);font-weight:300;opacity:0;animation:fadeUp .9s .9s var(--ease) forwards;}
 
+        .hero-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;will-change:opacity;}
+        .hero-bottom{display:flex;flex-direction:column;align-items:center;gap:1.4rem;}
+        .hero-tags span{text-shadow:0 1px 12px rgba(3,10,36,.6);}
+
+        /* ── KEY FIGURES ── */
+        .figures{background:var(--white);border-bottom:1px solid var(--line);padding:3.2rem 2.5vw 2rem;}
+        .figures-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5rem;}
+        .figure{display:flex;flex-direction:column;gap:.35rem;padding-left:1.2rem;border-left:1px solid var(--line);}
+        .figure-value{font-family:var(--serif);font-weight:400;font-size:clamp(2rem,3.4vw,2.9rem);line-height:1.05;letter-spacing:-.02em;color:var(--navy);}
+        .figure-value--sm{font-size:clamp(1.4rem,2.2vw,1.9rem);padding-top:.5rem;}
+        .figure-label{font-size:.88rem;color:var(--muted);font-weight:400;line-height:1.45;}
+        .figures-note{max-width:1200px;margin:1.8rem auto 0;font-size:.75rem;color:var(--muted);}
+
+        /* ── SERVICES CARDS ── */
+        .svc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem;}
+        .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:6px;padding:2rem 2rem 1.8rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
+        .svc-card:hover{border-color:#c9d3e3;box-shadow:0 12px 30px rgba(3,10,36,.06);}
+        .svc-num{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--blue);}
+        .svc-title{font-family:var(--serif);font-weight:400;font-size:1.65rem;letter-spacing:-.01em;line-height:1.15;}
+        .svc-desc{color:var(--muted);font-size:1.05rem;line-height:1.7;font-weight:300;flex-grow:1;}
+        .svc-tags{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding-top:.4rem;}
+
+        /* ── TEAM ── */
+        .team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem;}
+        .member{background:var(--accent-bg);border-radius:6px;padding:2.2rem 2.2rem 2rem;display:flex;flex-direction:column;gap:1rem;}
+        .member-head{display:flex;align-items:center;gap:1.3rem;margin-bottom:.4rem;}
+        .member-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;filter:grayscale(1);}
+        .member-initials{display:flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;font-family:var(--serif);font-size:1.9rem;letter-spacing:.02em;filter:none;}
+        .member-name{font-family:var(--serif);font-weight:400;font-size:1.6rem;letter-spacing:-.01em;line-height:1.15;}
+        .member-role{font-size:.8rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-top:.25rem;}
+        .member-formerly{font-size:.88rem;color:var(--muted);margin-top:.2rem;}
+        .member-bio{color:#4a4a4a;font-size:1rem;line-height:1.75;font-weight:300;}
+        .member-edu{font-size:.88rem;color:var(--ink);padding-top:1rem;border-top:1px solid #dde3ec;margin-top:auto;}
+        .member-link{font-size:.85rem;font-weight:500;color:var(--blue);}
+        .exp{margin-top:3.5rem;}
+        .exp-title{font-family:var(--serif);font-weight:400;font-size:1.4rem;letter-spacing:-.01em;}
+        .exp-note{font-size:.9rem;color:var(--muted);margin:.3rem 0 1.4rem;}
+        .exp-list{list-style:none;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);}
+        .exp-list li{font-family:var(--serif);font-size:1.02rem;color:var(--navy);padding:1.1rem .9rem;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;min-height:72px;line-height:1.25;}
+
         /* ── SECTIONS ── */
         .section{max-width:1200px;margin:0 auto;padding:7rem 2.5vw;color:var(--ink);}
         .section-bg{background:var(--white);}
@@ -907,9 +1034,9 @@ export default function AmbroisePartnersModern() {
         .about-split{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;}
         .about-lede{color:var(--muted);font-size:1rem;line-height:1.7;margin-top:1.2rem;font-weight:300;letter-spacing:-.01em;}
         .about-links{display:flex;gap:1rem;margin-top:2.5rem;flex-wrap:wrap;}
-        .btn-dark{background:var(--ink);color:#fff;padding:.9rem 2rem;border-radius:100px;font-size:.75rem;font-weight:500;letter-spacing:.04em;transition:background .22s,transform .2s,box-shadow .22s;}
-        .btn-dark:hover{background:#030a24;transform:translateY(-2px);box-shadow:0 10px 26px rgba(3,10,36,.2);}
-        .btn-outline{border:1.5px solid var(--line);color:var(--ink);padding:.9rem 2rem;border-radius:100px;font-size:.75rem;font-weight:500;letter-spacing:.04em;transition:border-color .22s,color .22s;}
+        .btn-dark{background:var(--navy);color:#fff;padding:.9rem 2rem;border-radius:100px;font-size:.75rem;font-weight:500;letter-spacing:.04em;transition:background .22s,transform .2s,box-shadow .22s;}
+        .btn-dark:hover{background:var(--navy-hover);transform:translateY(-2px);box-shadow:0 10px 26px rgba(3,10,36,.2);}
+        .btn-outline{display:inline-flex;align-items:center;white-space:nowrap;border:1.5px solid #cfd5df;color:var(--ink);padding:.8rem 1.7rem;border-radius:100px;font-size:.8rem;font-weight:500;letter-spacing:.04em;transition:border-color .22s,color .22s;}
         .btn-outline:hover{border-color:var(--blue);color:var(--blue);}
         .about-dark{background:var(--dark);border-radius:4px;padding:3.5rem 3rem;color:#fff;position:relative;overflow:hidden;}
         .about-dark-label{font-family:var(--serif);font-weight:400;font-size:1.2rem;letter-spacing:-.01em;margin-bottom:1.5rem;position:relative;}
@@ -928,8 +1055,8 @@ export default function AmbroisePartnersModern() {
         .ft{min-height:90px;resize:vertical;}
         .fc{display:flex;gap:.7rem;align-items:flex-start;font-size:.75rem;color:var(--muted);cursor:pointer;line-height:1.55;font-weight:300;}
         .fc input{margin-top:3px;flex-shrink:0;accent-color:var(--blue);}
-        .submit-btn{align-self:center;background:var(--ink);color:#fff;border:1.5px solid var(--ink);padding:1rem 3rem;border-radius:9999px;font-family:var(--sans);font-size:.85rem;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:background .22s,transform .2s,box-shadow .22s,color .22s,border-color .22s;}
-        .submit-btn:hover{background:#030a24;border-color:#030a24;transform:translateY(-2px);box-shadow:0 10px 28px rgba(3,10,36,.2);}
+        .submit-btn{align-self:center;background:var(--navy);color:#fff;border:1.5px solid var(--navy);padding:1rem 3rem;border-radius:9999px;font-family:var(--sans);font-size:.85rem;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:background .22s,transform .2s,box-shadow .22s,color .22s,border-color .22s;}
+        .submit-btn:hover{background:var(--navy-hover);border-color:var(--navy-hover);transform:translateY(-2px);box-shadow:0 10px 28px rgba(3,10,36,.2);}
 
         /* ── SERVICES TABS ── */
         .svc-tabs{display:flex;border-bottom:1px solid var(--line);justify-content:space-between;overflow:hidden;margin-top:4.5rem;}
@@ -939,8 +1066,8 @@ export default function AmbroisePartnersModern() {
         .svc-tab:hover::after{transform:scaleX(1);}
         .svc-tab--active{color:var(--ink);}
         .svc-tab--active::after{transform:scaleX(1);}
-        .svc-tag{padding:8px 18px;border-radius:100px;font-size:.85rem;font-weight:500;letter-spacing:.02em;border:none;color:#fff;background:var(--ink);transition:all .3s ease;font-family:var(--sans);white-space:nowrap;animation:svcFadeUp .35s cubic-bezier(0.25,0.1,0.25,1) both;}
-        .svc-tag:hover{background:#162d50;}
+        .svc-tag{padding:7px 16px;border-radius:100px;font-size:.8rem;font-weight:500;letter-spacing:.02em;border:none;color:var(--navy);background:#e9eef6;transition:all .3s ease;font-family:var(--sans);white-space:nowrap;animation:svcFadeUp .35s cubic-bezier(0.25,0.1,0.25,1) both;}
+        .svc-tag:hover{background:#dde5f1;}
         .svc-panel-anim{animation:svcFadeUp .4s cubic-bezier(0.25,0.1,0.25,1) forwards;}
         @keyframes svcFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 
@@ -960,26 +1087,29 @@ export default function AmbroisePartnersModern() {
         .footer-logo-wrap{display:flex;align-items:center;gap:.7rem;margin-bottom:.8rem;}
         .footer-logo{font-family:var(--serif);font-weight:500;font-size:1.4rem;color:#fff;letter-spacing:-.01em;}
         .footer-logo-sep{width:1px;height:14px;background:rgba(255,255,255,.25);}
-        .footer-brand-name{font-size:1.05rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#fff;}
-        .footer-brand-desc{font-size:.82rem;line-height:1.7;color:rgba(255,255,255,.35);font-weight:300;max-width:28ch;margin-bottom:1rem;}
+        .footer-brand-name{display:flex;flex-direction:column;gap:4px;font-size:.78rem;letter-spacing:.28em;text-transform:uppercase;line-height:1;color:#fff;}
+        .footer-mark{width:54px;height:34px;color:#fff;flex-shrink:0;}
+        .footer-brand-desc{font-size:.82rem;line-height:1.7;color:rgba(255,255,255,.72);font-weight:300;max-width:28ch;margin-bottom:1rem;}
         .footer-contact{display:flex;flex-direction:column;gap:.3rem;}
-        .footer-contact a,.footer-contact span{font-size:.78rem;color:rgba(255,255,255,.4);font-weight:300;transition:color .18s;}
+        .footer-contact a,.footer-contact span{font-size:.78rem;color:rgba(255,255,255,.72);font-weight:300;transition:color .18s;}
         .footer-contact a:hover{color:#fff;}
 
         .footer-links{display:flex;gap:3.5rem;flex-wrap:wrap;}
-        .footer-col-title{font-size:.6rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.9rem;}
-        .footer-col a{display:block;font-size:.82rem;color:rgba(255,255,255,.45);margin-bottom:.55rem;transition:color .18s;font-weight:300;}
+        .footer-col-title{font-size:.65rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.62);margin-bottom:.9rem;}
+        .footer-col a{display:block;font-size:.85rem;color:rgba(255,255,255,.75);margin-bottom:.55rem;transition:color .18s;font-weight:300;}
         .footer-col a:hover{color:#fff;}
 
         .footer-bottom{padding-top:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;}
-        .footer-copy{font-size:.65rem;color:rgba(255,255,255,.22);letter-spacing:.04em;}
+        .footer-copy{font-size:.72rem;color:rgba(255,255,255,.6);letter-spacing:.03em;}
 
         /* ── DOMAINS GRID ── */
         .domains-grid{display:flex;gap:6px;height:520px;}
         .domain-card{position:relative;border-radius:4px;overflow:hidden;flex-grow:1;flex-shrink:1;flex-basis:0;min-width:0;cursor:pointer;transition:flex-grow .5s var(--ease),flex-shrink .5s var(--ease),box-shadow .4s ease;}
         .domain-card--shrunk{flex-grow:.7;flex-shrink:1;}
         .domain-card--active{flex-grow:2;flex-shrink:0;box-shadow:0 12px 30px rgba(0,0,0,.18);}
-        .domain-img{position:absolute;inset:0;transition:transform .55s cubic-bezier(0.16,1,0.3,1);}
+        .domain-img{position:absolute;inset:0;transition:transform .55s cubic-bezier(0.16,1,0.3,1);filter:grayscale(1) contrast(1.05) brightness(1.18);}
+        .domain-tint{position:absolute;inset:0;background:linear-gradient(165deg,#a9c4ee 0%,#4f7fcc 50%,#0d2257 100%);mix-blend-mode:multiply;opacity:.9;transition:opacity .45s ease;}
+        .domain-card--active .domain-tint{opacity:.78;}
         .domain-card--active .domain-img{transform:scale(1.03);}
         .domain-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.05) 50%,transparent 100%);transition:background .35s ease;}
         .domain-card--active .domain-overlay{background:linear-gradient(to top,rgba(0,0,0,0.6) 0%,rgba(0,0,0,0.08) 60%,transparent 100%);}
@@ -1036,6 +1166,9 @@ export default function AmbroisePartnersModern() {
           .method-step{grid-template-columns:60px 1fr;}
           .step-arrow{display:none;}
           .svc-tab{font-size:1rem;padding:0 0 14px 0;}
+          .svc-grid,.team-grid{grid-template-columns:1fr;}
+          .figures-inner{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2rem;}
+          .exp-list{grid-template-columns:repeat(4,minmax(0,1fr));}
           .domains-grid{height:360px;gap:6px;}
           .domain-card--active{flex-grow:2;}
           .dalt-carousel{height:400px;}
@@ -1047,8 +1180,8 @@ export default function AmbroisePartnersModern() {
 
           /* Nav */
           nav{padding:0 4vw;height:56px;}
-          .logo-ap{font-size:1.3rem;}
-          .logo-name{font-size:.9rem;letter-spacing:.1em;}
+          .logo-mark{width:46px;height:29px;}
+          .logo-name{font-size:.68rem;letter-spacing:.24em;}
           .logo-sep{height:13px;}
           .nav-cta{padding:.48rem 1.1rem!important;font-size:.72rem!important;}
 
@@ -1058,7 +1191,12 @@ export default function AmbroisePartnersModern() {
           .hero-inner{padding-top:3rem;padding-bottom:1rem;}
           .hero-ctas{gap:.6rem;}
           .btn-primary,.btn-secondary{padding:.65rem 1.3rem;font-size:.78rem;}
-          .hero-tags span{font-size:.68rem;}
+          .hero-tags span{font-size:.72rem;}
+          .hero-tags{gap:.35rem 1rem;max-width:340px;margin-left:auto;margin-right:auto;}
+          .hero-tags span:not(:last-child)::after{display:none;}
+          .hero-content{padding:0 16px;}
+          .hero-line-1,.hero-line-2{display:inline!important;}
+          .hero-line-1::after{content:' ';}
 
           /* Sections global */
           .section{padding:3rem 4vw;}
@@ -1066,6 +1204,22 @@ export default function AmbroisePartnersModern() {
           .section-lede{font-size:1rem;}
           .section-head{margin-bottom:1.5rem;}
           .eyebrow{font-size:.62rem;margin-bottom:.5rem;}
+
+          /* New sections */
+          .figures{padding:2.4rem 4vw 1.6rem;}
+          .figure{padding-left:.9rem;}
+          .svc-card{padding:1.5rem 1.3rem 1.4rem;}
+          .svc-title{font-size:1.35rem;}
+          .svc-desc{font-size:.95rem;}
+          .member{padding:1.6rem 1.3rem 1.5rem;}
+          .member-head{gap:1rem;}
+          .member-photo{width:72px;height:72px;}
+          .member-initials{font-size:1.4rem;}
+          .member-name{font-size:1.3rem;}
+          .member-bio{font-size:.92rem;}
+          .exp-list{grid-template-columns:repeat(2,minmax(0,1fr));}
+          .exp-list li{font-size:.92rem;min-height:56px;padding:.8rem .6rem;}
+          #team,#services{padding:3rem 4vw!important;}
 
           /* Services */
           .svc-tabs{flex-direction:column;gap:0;border-bottom:none;margin-top:1.5rem!important;overflow:visible;}
@@ -1180,24 +1334,24 @@ export default function AmbroisePartnersModern() {
       {/* NAV */}
       <div className="nav-outer" ref={navRef}>
         <nav>
-          <div className="logo-wrap">
-            <span className="logo-ap">AP</span>
-            <span className="logo-sep" />
-            <span className="logo-name">Ambroise Partners</span>
-          </div>
+          <a href="#top" className="logo-wrap" aria-label="Ambroise Partners home">
+            <LogoMark className="logo-mark" />
+            <span className="logo-name"><span className="logo-l1">Ambroise</span><span className="logo-l2">Partners</span></span>
+          </a>
           <div className="nav-links">
             <a href="#services">Services</a>
             <a href="#approach">Approach</a>
+            <a href="#team">Team</a>
             <a href="#domains">Expertise</a>
-            <a href="#method">Process</a>
             <a href="#contact" className="nav-cta">Contact us</a>
           </div>
         </nav>
       </div>
 
       {/* HERO */}
-      <header className="hero" ref={heroRef}>
+      <header className="hero" id="top" ref={heroRef}>
         <canvas id="hero-canvas" ref={canvasRef} />
+        <div className="hero-content">
         <div className="hero-inner">
           <h1 className="hero-h1">
             <span className="hero-line hero-line-1" style={{display:'block'}}>Independent strategic and</span>
@@ -1207,10 +1361,17 @@ export default function AmbroisePartnersModern() {
         </div>
         <div className="hero-bottom">
           <div className="hero-tags">
-            <span>M&amp;A</span><span>Fundraising</span><span>Licensing</span><span>Growth</span>
+            <span>M&amp;A Advisory</span><span>Capital Raising</span><span>Partnerships &amp; Licensing</span><span>Corporate Advisory</span>
+          </div>
+          <div className="hero-ctas">
+            <a href="#contact" className="btn-primary">Discuss your project</a>
+            <a href="#services" className="btn-secondary">Our services</a>
           </div>
         </div>
+        </div>
       </header>
+
+      <FiguresBand />
 
       {/* SERVICES */}
       <ServicesSection />
@@ -1251,6 +1412,8 @@ export default function AmbroisePartnersModern() {
       </section>
       </div>
 
+      <TeamSection />
+
       <ExpertiseSection />
 
       {/* SECTOR TICKER */}
@@ -1267,7 +1430,7 @@ export default function AmbroisePartnersModern() {
       </div>
 
       {/* METHOD */}
-      <div style={{ background: 'var(--accent-bg)', width: '100%' }}>
+      <div style={{ background: 'var(--white)', width: '100%' }}>
       <section style={{ padding: '5rem 2.5vw' }} id="method">
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
@@ -1322,34 +1485,34 @@ export default function AmbroisePartnersModern() {
           <div className="footer-top">
             <div className="footer-brand">
               <div className="footer-logo-wrap">
-                <span className="footer-logo">AP</span>
-                <span className="footer-logo-sep"></span>
-                <span className="footer-brand-name">Ambroise Partners</span>
+                <LogoMark className="footer-mark" />
+                <span className="footer-brand-name"><span className="logo-l1">Ambroise</span><span className="logo-l2">Partners</span></span>
               </div>
               <p className="footer-brand-desc">
-                Healthcare focused advisory
+                Healthcare-focused advisory
               </p>
               <div className="footer-contact">
                 <span>Paris · London</span>
+                <a href={COMPANY.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
               </div>
             </div>
 
             <div className="footer-links">
               <div className="footer-col">
                 <div className="footer-col-title">Services</div>
-                <a href="#services">M&amp;A</a>
-                <a href="#services">Private Capital Raising</a>
+                <a href="#services">M&amp;A Advisory</a>
+                <a href="#services">Capital Raising</a>
                 <a href="#services">Partnerships &amp; Licensing</a>
                 <a href="#services">Corporate Advisory</a>
-                <a href="#services">Public Capital Markets</a>
               </div>
               <div className="footer-col">
                 <div className="footer-col-title">Company</div>
                 <a href="#services">Services</a>
                 <a href="#approach">Approach</a>
+                <a href="#team">Team</a>
                 <a href="#domains">Expertise</a>
                 <a href="#method">Process</a>
-                <a href="#contact">Contact</a>
+                    <a href="#contact">Contact</a>
               </div>
               <div className="footer-col">
                 <div className="footer-col-title">Legal</div>
@@ -1362,7 +1525,8 @@ export default function AmbroisePartnersModern() {
 
           {/* ── Bottom bar ── */}
           <div className="footer-bottom">
-            <div className="footer-copy">© 2026 Ambroise Partners. All rights reserved.</div>
+            <div className="footer-copy">© {new Date().getFullYear()} {COMPANY.name}. All rights reserved.</div>
+            <div className="footer-copy">{COMPANY.legalFormShort} with a share capital of {COMPANY.shareCapital} · {COMPANY.rcs}</div>
           </div>
 
         </div>
