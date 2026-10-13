@@ -4,14 +4,15 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 
 ## Ce qui change
 
-- **Équipe** : nouvelle section *Team* (Camille Grellet, Thomas Guillot), avec les bios tirées de l'Overview et de la proposition MSInsight. Placée en bas de page, juste avant le formulaire de contact.
-- **Chiffres clés** : un bandeau sous le hero ($90bn+, 15+ ans, 100+ sociétés, Paris · London).
+- **Équipe** : section *Team* sur fond marine, en bas de page avant le contact : photo, nom, titre et lien LinkedIn (format Valmont, sans bios). Photos tirées de la proposition Theraclion, passées en noir et blanc sur fond gris clair (`public/team/`).
+- **Chiffres clés** : en bas du hero dès l'arrivée sur le site ($90bn+, 15+ ans, 100+ sociétés, Paris · London) ; en bandeau sous le hero sur mobile.
 - **Hero** :
-  - l'animation ADN est plus courte (700 px de défilement au lieu de 1 500) ;
+  - l'animation ADN est plus courte (360 px de défilement au lieu de 1 500), et la section Services glisse par-dessus le hero au lieu d'attendre la fin d'un écran vide ;
   - deux boutons ont été ajoutés (*Discuss your project*, *Our services*) ;
   - la ligne de services est alignée sur les 4 lignes de métier ;
   - le texte s'efface avant que le fond ne devienne blanc.
-- **Services** : quatre cartes toutes visibles au lieu d'onglets qui défilaient. *Private Capital Raising* et *Public Capital Markets* sont regroupés en *Capital Raising*, comme dans le deck.
+- **Mise en page** : sections resserrées pour tenir chacune dans une fenêtre (titres, marges, Approach en 3 colonnes, photos d'expertise moins hautes), logo d'une seule couleur.
+- **Services** : quatre cartes sur une ligne, toutes visibles au lieu d'onglets qui défilaient. *Private Capital Raising* et *Public Capital Markets* sont regroupés en *Capital Raising*, comme dans le deck.
 - **Photos d'expertise** : un traitement bichrome bleu marine unifie les six images.
 - **Détails** :
   - boutons en bleu marine ;
@@ -29,8 +30,7 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 
 ## À faire avant la mise en ligne
 
-1. **Photos de l'équipe** : déposer `camille.jpg` et `thomas.jpg` (carrées, au moins 600×600) dans `public/team/`, puis renseigner `photo: '/team/camille.jpg'` dans `TEAM` (`app/page.tsx`).
-2. **Statut réglementaire** (CIF/ORIAS, FCA) : à ajouter dans les mentions légales si applicable.
+1. **Statut réglementaire** (CIF/ORIAS, FCA) : à ajouter dans les mentions légales si applicable.
 
 ## Mettre en ligne
 
