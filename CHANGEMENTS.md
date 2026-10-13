@@ -8,14 +8,14 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 - **Chiffres clés** : en bas du hero dès l'arrivée sur le site ($90bn+, 15+ ans, 100+ sociétés, Paris · London) ; en bandeau sous le hero sur mobile.
 - **Hero** :
   - l'animation ADN est plus courte (360 px de défilement au lieu de 1 500), et la section Services glisse par-dessus le hero au lieu d'attendre la fin d'un écran vide ;
-  - deux boutons ont été ajoutés (*Discuss your project*, *Our services*) ;
+  - l'hélice d'ADN passe sur la droite pour ne plus couper le titre ; plus de boutons sous le titre ;
   - la ligne de services est alignée sur les 4 lignes de métier ;
   - le texte s'efface avant que le fond ne devienne blanc.
 - **Mise en page** : sections resserrées pour tenir chacune dans une fenêtre (titres, marges, Approach en 3 colonnes, photos d'expertise moins hautes), logo d'une seule couleur.
 - **Our Approach** : trois animations (canvas) : une hélice d'ADN qui tourne, un globe qui pivote des Amériques à l'Asie avec des liens depuis Paris vers Londres, Bâle, Boston, New York, San Francisco, São Paulo, Dubaï, Hong Kong et Tokyo, et une jauge qui fait le tour des étapes d'un mandat (Mandate → Closing). Elles ne tournent que lorsque la section est à l'écran.
+- **Typographie** : deux familles (Lora pour les titres, DM Sans pour le texte), deux graisses chacune et une échelle de six tailles déclarée une fois (`--fs-*`) ; les polices chargées passent de 7 à 4 fichiers. Chiffres clés plus petits, sans séparateurs ; lien LinkedIn de l'équipe sans cadre.
 - **Fonds** : alternance bleu clair / blanc (Services, Approach, Expertise et secteurs, Process), équipe sur fond marine ; le dégradé du hero passe par un bleu ardoise plus sourd.
 - **Services** : quatre cartes sur une ligne, toutes visibles au lieu d'onglets qui défilaient. *Private Capital Raising* et *Public Capital Markets* sont regroupés en *Capital Raising*, comme dans le deck.
-- **Photos d'expertise** : un traitement bichrome bleu marine unifie les six images.
 - **Détails** :
   - boutons en bleu marine ;
   - contraste du footer corrigé ;
