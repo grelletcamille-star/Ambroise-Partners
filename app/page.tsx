@@ -271,7 +271,7 @@ type Member = { name: string; role: string; photo: string; linkedin: string };
 /* Photos: square, grayscale, light grey background, in /public/team/. */
 const TEAM: Member[] = [
   { name: 'Camille Grellet', role: 'Founding Partner', photo: '/team/camille.jpg', linkedin: 'https://www.linkedin.com/in/camille-grellet-694b785b/' },
-  { name: 'Thomas Guillot', role: 'Associate Partner', photo: '/team/thomas.jpg', linkedin: 'https://www.linkedin.com/in/thomas-g-4956631b/' },
+  { name: 'Thomas Guillot', role: 'Senior Scientific Advisor', photo: '/team/thomas.jpg', linkedin: 'https://www.linkedin.com/in/thomas-g-4956631b/' },
 ];
 
 function TeamSection() {
