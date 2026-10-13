@@ -11,173 +11,136 @@ const STICKY_DESKTOP = 360;
 const STICKY_MOBILE = 220;
 const stickyPx = () => (window.innerWidth <= 600 ? STICKY_MOBILE : STICKY_DESKTOP);
 
-/* ─── Animated canvas for each approach pillar ─── */
-function ApproachCanvas({ type }: { type: 'brain' | 'network' | 'curve' }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+/* ─── Line illustrations for the three approach pillars ───
+   Drawn in SVG (crisp at any size, no animation loop running in the background). Lines draw in
+   and nodes appear when the panel scrolls into view (`.visible`, set by the reveal observer). */
+const hexPts = (cx: number, cy: number, r: number) =>
+  Array.from({ length: 6 }, (_, k) => {
+    const a = (Math.PI / 180) * (60 * k - 90);
+    return [+(cx + r * Math.cos(a)).toFixed(1), +(cy + r * Math.sin(a)).toFixed(1)] as [number, number];
+  });
 
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d')!;
-    let raf = 0;
-    let W = 0, H = 0;
-    let started = false;
-
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      W = canvas.offsetWidth;
-      H = canvas.offsetHeight;
-      if (W === 0 || H === 0) return;
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    /* ── brain ── */
-    const nodes: { x: number; y: number; vx: number; vy: number; r: number }[] = [];
-    const N = 35;
-    const initBrain = () => {
-      nodes.length = 0;
-      for (let i = 0; i < N; i++)
-        nodes.push({ x: Math.random()*W, y: Math.random()*H,
-          vx:(Math.random()-.5)*.6, vy:(Math.random()-.5)*.6, r:Math.random()*2.2+1.2 });
-    };
-    const drawBrain = () => {
-      ctx.clearRect(0,0,W,H);
-      nodes.forEach(n => {
-        n.x += n.vx; n.y += n.vy;
-        if (n.x<0||n.x>W) n.vx*=-1;
-        if (n.y<0||n.y>H) n.vy*=-1;
-      });
-      for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) {
-        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if (d<110) {
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x,nodes[i].y);
-          ctx.lineTo(nodes[j].x,nodes[j].y);
-          ctx.strokeStyle=`rgba(22,45,80,${0.18*(1-d/110)})`;
-          ctx.lineWidth=0.8;
-          ctx.stroke();
-        }
-      }
-      nodes.forEach(n => {
-        ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
-        ctx.fillStyle='rgba(22,45,80,0.55)'; ctx.fill();
-      });
-      raf = requestAnimationFrame(drawBrain);
-    };
-
-    /* ── network ── */
-    const hubs = [
-      { x:.5, y:.5, r:5 },
-      { x:.2, y:.25, r:2.8 }, { x:.8, y:.25, r:2.8 },
-      { x:.2, y:.75, r:2.8 }, { x:.8, y:.75, r:2.8 },
-      { x:.5,  y:.15, r:2.2 }, { x:.5,  y:.85, r:2.2 },
-      { x:.15, y:.5,  r:2.2 }, { x:.85, y:.5,  r:2.2 },
-    ];
-    let nt = 0;
-    const drawNetwork = () => {
-      ctx.clearRect(0,0,W,H);
-      nt += 0.018;
-      const cx = hubs[0].x*W, cy = hubs[0].y*H;
-      const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.28);
-      grad.addColorStop(0,'rgba(22,45,80,0.12)');
-      grad.addColorStop(1,'rgba(22,45,80,0)');
-      ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(cx,cy,W*.28,0,Math.PI*2); ctx.fill();
-      hubs.slice(1).forEach((h,i) => {
-        const hx=h.x*W, hy=h.y*H;
-        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(hx,hy);
-        ctx.strokeStyle=`rgba(22,45,80,${0.18+0.08*Math.sin(nt+i)})`; ctx.lineWidth=1; ctx.stroke();
-        const p = (Math.sin(nt*0.8+i*1.1)+1)/2;
-        const px2 = cx+(hx-cx)*p, py2 = cy+(hy-cy)*p;
-        ctx.beginPath(); ctx.arc(px2,py2,2.2,0,Math.PI*2);
-        ctx.fillStyle='rgba(22,45,80,0.7)'; ctx.fill();
-        ctx.beginPath(); ctx.arc(hx,hy,h.r,0,Math.PI*2);
-        ctx.fillStyle=`rgba(22,45,80,${0.45+0.15*Math.sin(nt+i)})`; ctx.fill();
-      });
-      ctx.beginPath(); ctx.arc(cx,cy,hubs[0].r*(1+.12*Math.sin(nt)),0,Math.PI*2);
-      ctx.fillStyle='rgba(22,45,80,0.8)'; ctx.fill();
-      raf = requestAnimationFrame(drawNetwork);
-    };
-
-    /* ── curve ── */
-    let ct = 0;
-    const drawCurve = () => {
-      ctx.clearRect(0,0,W,H);
-      ct += 0.015;
-      const pts = 80;
-      const pad = { x: W*.08, y: H*.1 };
-      const iW = W-pad.x*2, iH = H-pad.y*2;
-      for (let i=0;i<=4;i++) {
-        const y = pad.y + iH*(1-i/4);
-        ctx.beginPath(); ctx.moveTo(pad.x,y); ctx.lineTo(pad.x+iW,y);
-        ctx.strokeStyle='rgba(22,45,80,0.07)'; ctx.lineWidth=1; ctx.stroke();
-      }
-      ctx.beginPath();
-      ctx.moveTo(pad.x, pad.y+iH);
-      for (let i=0;i<=pts;i++) {
-        const fx = i/pts;
-        const fy = Math.pow(fx,1.6) + Math.sin(fx*Math.PI*2+ct)*0.15*(1-fx*.5);
-        const x = pad.x + fx*iW;
-        const y = pad.y + iH*(1-Math.min(fy,1));
-        i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      }
-      ctx.lineTo(pad.x+iW, pad.y+iH);
-      ctx.closePath();
-      const fill = ctx.createLinearGradient(0,pad.y,0,pad.y+iH);
-      fill.addColorStop(0,'rgba(22,45,80,0.14)');
-      fill.addColorStop(1,'rgba(22,45,80,0.01)');
-      ctx.fillStyle=fill; ctx.fill();
-      ctx.beginPath();
-      for (let i=0;i<=pts;i++) {
-        const fx = i/pts;
-        const fy = Math.pow(fx,1.6) + Math.sin(fx*Math.PI*2+ct)*0.15*(1-fx*.5);
-        const x = pad.x + fx*iW;
-        const y = pad.y + iH*(1-Math.min(fy,1));
-        i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      }
-      ctx.strokeStyle='rgba(22,45,80,0.75)'; ctx.lineWidth=2.2;
-      ctx.lineJoin='round'; ctx.stroke();
-      const lastFy = Math.pow(1,1.6)+Math.sin(Math.PI*2+ct)*0.15*.5;
-      const dotY = pad.y+iH*(1-Math.min(lastFy,1));
-      ctx.beginPath(); ctx.arc(pad.x+iW, dotY, 4.5, 0, Math.PI*2);
-      ctx.fillStyle='rgba(22,45,80,0.9)'; ctx.fill();
-      raf = requestAnimationFrame(drawCurve);
-    };
-
-    /* ── Start: wait for valid dimensions (Safari fix) ── */
-    const start = () => {
-      if (started) return;
-      resize();
-      if (W === 0 || H === 0) { requestAnimationFrame(start); return; }
-      started = true;
-      if (type === 'brain') { initBrain(); drawBrain(); }
-      else if (type === 'network') { drawNetwork(); }
-      else { drawCurve(); }
-    };
-
-    const onResize = () => {
-      resize();
-      if (type === 'brain') initBrain();
-    };
-    window.addEventListener('resize', onResize);
-
-    if (document.readyState === 'complete') {
-      start();
-    } else {
-      window.addEventListener('load', start, { once: true });
-    }
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-    };
-  }, [type]);
-
-  return <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />;
+function ScienceArt() {
+  const r = 21, w = r * Math.sqrt(3);
+  const Y = 50;
+  const rings = [hexPts(150, Y, r), hexPts(150 + w, Y, r), hexPts(150 + w / 2, Y + 1.5 * r, r)];
+  const key = (p: number[]) => p.join(',');
+  const atoms = new Map<string, [number, number]>();
+  const bonds = new Set<string>();
+  rings.forEach(ring => ring.forEach((p, k) => {
+    atoms.set(key(p), p);
+    const q = ring[(k + 1) % 6];
+    const e = [key(p), key(q)].sort().join('|');
+    bonds.add(e);
+  }));
+  const bondList = [...bonds].map(e => e.split('|').map(k => atoms.get(k)!));
+  const atomList = [...atoms.values()];
+  // side chains: from the left ring and from the lower ring
+  const L = rings[0][4], D = rings[2][3], U = rings[1][1];
+  const chains: [number, number][][] = [
+    [L, [L[0] - 22, L[1] - 12], [L[0] - 44, L[1]]],
+    [D, [D[0] - 10, D[1] + 18]],
+    [U, [U[0] + 22, U[1] - 12], [U[0] + 44, U[1]]],
+  ];
+  return (
+    <svg className="apx" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <circle cx="168" cy="68" r="62" className="apx-faint" />
+      <circle cx="168" cy="68" r="42" className="apx-faint apx-dash" />
+      <g className="apx-float">
+        {bondList.map(([p, q], i) => (
+          <line key={i} x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} pathLength={1} className="apx-line apx-draw" style={{ ['--d' as string]: `${i * 0.04}s` }} />
+        ))}
+        {/* inner double bonds */}
+        {[rings[0], rings[1], rings[2]].map((ring, i) => {
+          const [p, q] = [ring[(i * 2) % 6], ring[(i * 2 + 1) % 6]];
+          const c = i === 0 ? [150, Y] : i === 1 ? [150 + w, Y] : [150 + w / 2, Y + 1.5 * r];
+          const sh = (v: number[]) => [c[0] + (v[0] - c[0]) * 0.72, c[1] + (v[1] - c[1]) * 0.72];
+          const [a2, b2] = [sh(p), sh(q)];
+          return <line key={`d${i}`} x1={a2[0]} y1={a2[1]} x2={b2[0]} y2={b2[1]} pathLength={1} className="apx-line apx-thin apx-draw" style={{ ['--d' as string]: `${0.6 + i * 0.1}s` }} />;
+        })}
+        {chains.map((c, i) => (
+          <polyline key={`c${i}`} points={c.map(p => p.join(',')).join(' ')} pathLength={1} className="apx-line apx-draw" style={{ ['--d' as string]: `${0.7 + i * 0.12}s` }} />
+        ))}
+        {atomList.map((p, i) => (
+          <circle key={i} cx={p[0]} cy={p[1]} r={2.6} className="apx-atom apx-pop" style={{ ['--d' as string]: `${0.3 + i * 0.03}s` }} />
+        ))}
+        {chains.map((c, i) => {
+          const end = c[c.length - 1];
+          return <circle key={`e${i}`} cx={end[0]} cy={end[1]} r={4.2} className="apx-accent apx-pop apx-pulse" style={{ ['--d' as string]: `${1.1 + i * 0.12}s` }} />;
+        })}
+        <text x={chains[0][2][0] - 8} y={chains[0][2][1] + 3} textAnchor="end" className="apx-chem">N</text>
+        <text x={chains[1][1][0] + 9} y={chains[1][1][1] + 8} textAnchor="middle" className="apx-chem">O</text>
+        <text x={chains[2][2][0] + 8} y={chains[2][2][1] + 3} className="apx-chem">OH</text>
+      </g>
+    </svg>
+  );
 }
 
+function NetworkArt() {
+  const cx = 180, cy = 75;
+  const on = (deg: number, rx: number, ry: number): [number, number] => {
+    const a = (deg * Math.PI) / 180;
+    return [+(cx + rx * Math.cos(a)).toFixed(1), +(cy + ry * Math.sin(a)).toFixed(1)];
+  };
+  const hubs = [
+    { deg: 200, label: 'Investors', anchor: 'end', dx: -9, dy: 3 },
+    { deg: 320, label: 'Pharma', anchor: 'start', dx: 9, dy: -2 },
+    { deg: 25, label: 'MedTech', anchor: 'start', dx: 9, dy: 6 },
+    { deg: 140, label: 'Acquirers', anchor: 'end', dx: -9, dy: 8 },
+  ].map(h => ({ ...h, p: on(h.deg, 132, 52) }));
+  const minor = [255, 280, 80, 105, 350, 170].map(d => on(d, 132, 52));
+  const inner = [230, 300, 50, 120].map(d => on(d, 70, 28));
+  return (
+    <svg className="apx" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <ellipse cx={cx} cy={cy} rx="132" ry="52" className="apx-faint" />
+      <ellipse cx={cx} cy={cy} rx="70" ry="28" className="apx-faint apx-dash" />
+      {hubs.map((h, i) => (
+        <g key={h.label}>
+          <path id={`net-l${i}`} d={`M${cx} ${cy} L${h.p[0]} ${h.p[1]}`} pathLength={1} className="apx-line apx-draw" style={{ ['--d' as string]: `${0.2 + i * 0.15}s` }} />
+          <circle r="2.2" className="apx-spark">
+            <animateMotion dur={`${2.6 + i * 0.4}s`} repeatCount="indefinite" begin={`${1.4 + i * 0.5}s`} path={`M${cx} ${cy} L${h.p[0]} ${h.p[1]}`} />
+          </circle>
+        </g>
+      ))}
+      {minor.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="2.2" className="apx-atom apx-pop" style={{ ['--d' as string]: `${0.5 + i * 0.06}s` }} />)}
+      {inner.map((p, i) => <circle key={`i${i}`} cx={p[0]} cy={p[1]} r="1.8" className="apx-dot apx-pop" style={{ ['--d' as string]: `${0.4 + i * 0.06}s` }} />)}
+      {hubs.map((h, i) => (
+        <g key={`h${h.label}`} className="apx-pop" style={{ ['--d' as string]: `${0.7 + i * 0.15}s` }}>
+          <circle cx={h.p[0]} cy={h.p[1]} r="4.6" className="apx-accent" />
+          <text x={h.p[0] + h.dx} y={h.p[1] + h.dy} textAnchor={h.anchor as 'start' | 'end'} className="apx-label">{h.label}</text>
+        </g>
+      ))}
+      <circle cx={cx} cy={cy} r="15" className="apx-hub-ring apx-pulse" />
+      <circle cx={cx} cy={cy} r="11" className="apx-hub" />
+      <text x={cx} y={cy + 3.6} textAnchor="middle" className="apx-hub-text">AP</text>
+    </svg>
+  );
+}
+
+function ExecutionArt() {
+  const steps = ['Mandate', 'Preparation', 'Outreach', 'Due diligence', 'Closing'];
+  const x0 = 34, x1 = 326, y = 92;
+  const xs = steps.map((_, i) => x0 + ((x1 - x0) * i) / (steps.length - 1));
+  return (
+    <svg className="apx" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      {/* rising value line above the timeline */}
+      <path d={`M${x0} 72 C 120 70, 170 64, 220 54 S 300 38, ${x1} 32`} pathLength={1} className="apx-line apx-thin apx-draw" style={{ ['--d' as string]: '0.2s', ['--t' as string]: '1.6s' }} />
+      <path d={`M${x0} 72 C 120 70, 170 64, 220 54 S 300 38, ${x1} 32 L ${x1} 72 L ${x0} 72 Z`} className="apx-area apx-pop" style={{ ['--d' as string]: '1.2s' }} />
+      <line x1={x0} y1={y} x2={x1} y2={y} className="apx-track" />
+      <line x1={x0} y1={y} x2={x1} y2={y} pathLength={1} className="apx-line apx-progress apx-draw" style={{ ['--d' as string]: '0.3s', ['--t' as string]: '1.8s' }} />
+      {xs.map((x, i) => {
+        const last = i === steps.length - 1;
+        return (
+          <g key={steps[i]} className="apx-pop" style={{ ['--d' as string]: `${0.35 + i * 0.4}s` }}>
+            <circle cx={x} cy={y} r={last ? 9 : 5.5} className={last ? 'apx-accent apx-pulse' : 'apx-step'} />
+            {last && <path d={`M${x - 3.6} ${y + 0.2} l2.6 2.6 l4.8 -5.2`} className="apx-check" />}
+            <text x={x} y={y + 24} textAnchor="middle" className="apx-label">{steps[i]}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 /* ─── Expertise Section ─── */
 const DOMAINS = [
@@ -1000,6 +963,36 @@ export default function AmbroisePartnersModern() {
         .approach-desc{color:var(--muted);font-size:.98rem;line-height:1.65;font-weight:300;}
         .approach-canvas-wrap{order:-1;background:var(--accent-bg);overflow:hidden;position:relative;height:clamp(120px,15vh,160px);border-bottom:1px solid var(--line);}
 
+        /* Approach illustrations */
+        .apx{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+        .apx-line{fill:none;stroke:var(--navy);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
+        .apx-thin{stroke-width:.9;stroke:#5b6b8a;}
+        .apx-faint{fill:none;stroke:#d5dde9;stroke-width:1;}
+        .apx-dash{stroke-dasharray:2 4;}
+        .apx-track{stroke:#d5dde9;stroke-width:2;stroke-linecap:round;}
+        .apx-progress{stroke-width:2;}
+        .apx-area{fill:rgba(42,92,184,.07);stroke:none;}
+        .apx-atom{fill:#fff;stroke:var(--navy);stroke-width:1.2;}
+        .apx-dot{fill:#9aa8c0;}
+        .apx-step{fill:#fff;stroke:var(--navy);stroke-width:1.4;}
+        .apx-accent{fill:var(--blue);}
+        .apx-spark{fill:var(--blue);opacity:.85;}
+        .apx-check{fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+        .apx-hub{fill:var(--navy);}
+        .apx-hub-ring{fill:none;stroke:var(--blue);stroke-width:1;opacity:.5;}
+        .apx-hub-text{font-family:var(--serif);font-size:9.5px;fill:#fff;letter-spacing:.02em;}
+        .apx-label{font-family:var(--sans);font-size:9.5px;fill:#5f5f5f;letter-spacing:.01em;}
+        .apx-chem{font-family:var(--serif);font-style:italic;font-size:11px;fill:var(--blue);}
+        .apx-draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset var(--t,.9s) var(--ease) var(--d,0s);}
+        .apx-pop{opacity:0;transform:scale(.4);transform-box:fill-box;transform-origin:center;transition:opacity .5s ease var(--d,0s),transform .5s var(--ease) var(--d,0s);}
+        .visible .apx-draw{stroke-dashoffset:0;}
+        .visible .apx-pop{opacity:1;transform:none;}
+        .visible .apx-float{animation:apxFloat 7s ease-in-out 2s infinite;}
+        .visible .apx-pulse{animation:apxPulse 2.8s ease-in-out 2s infinite;}
+        @keyframes apxFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+        @keyframes apxPulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+        @media (prefers-reduced-motion:reduce){.apx-draw{stroke-dashoffset:0;transition:none;}.apx-pop{opacity:1;transform:none;transition:none;}.apx-float,.apx-pulse{animation:none!important;}.apx-spark{display:none;}}
+
         /* ── VALUES ── */
         .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#fff;}
         .value-card{background:var(--accent-bg);padding:1.8rem 1.6rem;transition:background .25s;}
@@ -1371,21 +1364,21 @@ export default function AmbroisePartnersModern() {
               <div className="approach-title">Scientific &amp; Technical Expertise</div>
               <p className="approach-desc">Advanced medical and scientific training enables the rigorous assessment of complex technologies and the crafting of clear, differentiated equity stories that resonate with specialist investors and strategic partners.</p>
             </div>
-            <div className="approach-canvas-wrap"><ApproachCanvas type="brain" /></div>
+            <div className="approach-canvas-wrap"><ScienceArt /></div>
           </div>
           <div className="approach-panel reveal reveal-d1">
             <div className="approach-text">
               <div className="approach-title">Targeted Global Network</div>
               <p className="approach-desc">A curated global network of leading healthcare-focused investors, pharma and medtech corporates, and strategic acquirers worldwide. Developed through years of active involvement in the sector, it provides direct access to the right counterparties and ensures focused, relevant engagement.</p>
             </div>
-            <div className="approach-canvas-wrap"><ApproachCanvas type="network" /></div>
+            <div className="approach-canvas-wrap"><NetworkArt /></div>
           </div>
           <div className="approach-panel reveal reveal-d2">
             <div className="approach-text">
               <div className="approach-title">Execution Excellence</div>
               <p className="approach-desc">The rigour and standards developed over decades within top-tier investment banks, combined with the flexibility and hands-on dedication. Every process is conducted with discipline, discretion and a strong focus on outcomes.</p>
             </div>
-            <div className="approach-canvas-wrap"><ApproachCanvas type="curve" /></div>
+            <div className="approach-canvas-wrap"><ExecutionArt /></div>
           </div>
         </div>
       </div>
