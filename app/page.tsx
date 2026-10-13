@@ -7,8 +7,8 @@ import { COMPANY } from './lib/company';
 import LogoMark from './components/LogoMark';
 
 /* Height of the scroll-driven DNA animation before the page moves on. */
-const STICKY_DESKTOP = 700;
-const STICKY_MOBILE = 400;
+const STICKY_DESKTOP = 360;
+const STICKY_MOBILE = 220;
 const stickyPx = () => (window.innerWidth <= 600 ? STICKY_MOBILE : STICKY_DESKTOP);
 
 /* ─── Animated canvas for each approach pillar ─── */
@@ -192,7 +192,7 @@ const DOMAINS = [
 function ExpertiseSection() {
   const [hovered, setHovered] = useState<number | null>(null);
   return (
-    <section id="domains" style={{ background: 'var(--accent-bg)', padding: '5rem 2.5vw 5rem' }}>
+    <section id="domains" style={{ background: 'var(--accent-bg)', padding: '4.5rem 2.5vw' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What we cover</span>
@@ -236,7 +236,7 @@ const SERVICES = [
 
 function ServicesSection() {
   return (
-    <section id="services" style={{ background: 'var(--white)', padding: '5rem 2.5vw 5rem' }}>
+    <section id="services" style={{ background: 'var(--white)', padding: '4.5rem 2.5vw' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What we do</span>
@@ -268,6 +268,24 @@ const FIGURES = [
   { value: 'Paris · London', label: 'offices', small: true },
 ];
 
+/* Two placements for the same figures: inside the bottom of the hero on desktop (visible on load,
+   fades out with the headline), and as a band under the hero on phones, where the hero has no room. */
+function HeroStats() {
+  return (
+    <div className="hero-stats" aria-label="Key figures">
+      <div className="hero-stats-inner">
+        {FIGURES.map(f => (
+          <div key={f.label} className="hero-stat">
+            <span className="hero-stat-value">{f.value}</span>
+            <span className="hero-stat-label">{f.label}</span>
+          </div>
+        ))}
+      </div>
+      <p className="hero-stats-note">Including transactions executed by team members in previous roles.</p>
+    </div>
+  );
+}
+
 function FiguresBand() {
   return (
     <section className="figures" aria-label="Key figures">
@@ -285,66 +303,33 @@ function FiguresBand() {
 }
 
 /* ─── Team ─── */
-type Member = { name: string; role: string; initials: string; photo?: string; linkedin?: string; bio: string[]; education: string; formerly: string };
+type Member = { name: string; role: string; photo: string; linkedin: string };
 
-/* To add a photo: put the file in /public/team/ (square, at least 600×600) and set `photo: '/team/<file>.jpg'`.
-   To add a LinkedIn link: set `linkedin: 'https://www.linkedin.com/in/...'`. */
+/* Photos: square, grayscale, light grey background, in /public/team/. */
 const TEAM: Member[] = [
-  {
-    name: 'Camille Grellet',
-    role: 'Founding Partner',
-    initials: 'CG',
-    linkedin: 'https://www.linkedin.com/in/camille-grellet-694b785b/',
-    formerly: 'Cambon Partners · Lazard · Nomura',
-    bio: [
-      'Healthcare investment banker with more than ten years of experience. Camille previously built the healthcare practice at Cambon Partners, after serving as Vice President in Lazard’s Global Healthcare Group and working in Nomura’s healthcare team.',
-      'Her experience spans strategic transactions and carve-outs for global healthcare groups, advisory work for institutional investors, and financing, M&A and corporate-readiness support for healthcare companies.',
-    ],
-    education: 'Biomedical Engineering, Imperial College London (with distinction)',
-  },
-  {
-    name: 'Thomas Guillot',
-    role: 'Associate Partner',
-    initials: 'TG',
-    linkedin: 'https://www.linkedin.com/in/thomas-g-4956631b/',
-    formerly: 'Degroof Petercam · Kepler Cheuvreux · Société Générale',
-    bio: [
-      'More than ten years in healthcare finance. Thomas was previously in healthcare investment banking at Degroof Petercam, after investment banking and biotech equity research roles at Kepler Cheuvreux and Société Générale.',
-      'He has worked on numerous financings, including IPOs and private placements, and on strategic M&A mandates for biotech and medtech companies, and was formerly Head of Investor Relations at a listed biotech.',
-    ],
-    education: 'PharmD, Université de Rouen · MSc in Management, ESSEC Business School',
-  },
+  { name: 'Camille Grellet', role: 'Founding Partner', photo: '/team/camille.jpg', linkedin: 'https://www.linkedin.com/in/camille-grellet-694b785b/' },
+  { name: 'Thomas Guillot', role: 'Associate Partner', photo: '/team/thomas.jpg', linkedin: 'https://www.linkedin.com/in/thomas-g-4956631b/' },
 ];
 
-/* Companies advised by team members, including in previous roles (from the firm's credentials). */
 function TeamSection() {
   return (
-    <section id="team" style={{ background: 'var(--white)', padding: '5rem 2.5vw' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        <div className="section-head reveal">
-          <span className="eyebrow">Who we are</span>
-          <h2 className="section-title">A senior team, directly involved at every stage</h2>
-          <p className="section-lede">Transactional and scientific expertise, strengthened by a network of experts mobilised according to the needs of each mandate.</p>
-        </div>
-        <div className="team-grid">
-          {TEAM.map((m, i) => (
-            <article key={m.name} className={`member reveal reveal-d${i + 1}`}>
-              <div className="member-head">
-                {m.photo
-                  ? <Image src={m.photo} alt={m.name} width={96} height={96} className="member-photo" />
-                  : <span className="member-photo member-initials" aria-hidden="true">{m.initials}</span>}
-                <div>
-                  <h3 className="member-name">{m.name}</h3>
-                  <p className="member-role">{m.role}</p>
-                  <p className="member-formerly">{m.formerly}</p>
-                </div>
-              </div>
-              {m.bio.map(p => <p key={p.slice(0, 24)} className="member-bio">{p}</p>)}
-              <p className="member-edu">{m.education}</p>
-              {m.linkedin && <a className="member-link" href={m.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>}
-            </article>
-          ))}
-        </div>
+    <section id="team" className="team-sec">
+      <div className="section-head team-head reveal">
+        <span className="eyebrow">Our team</span>
+        <h2 className="section-title">A senior team, directly involved at every stage</h2>
+      </div>
+      <div className="team-row">
+        {TEAM.map((m, i) => (
+          <article key={m.name} className={`member reveal reveal-d${i + 1}`}>
+            <Image src={m.photo} alt={m.name} width={200} height={200} className="member-photo" />
+            <h3 className="member-name">{m.name}</h3>
+            <p className="member-role">{m.role}</p>
+            <a className="member-link" href={m.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${m.name} on LinkedIn`}>
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+              LinkedIn
+            </a>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -554,7 +539,7 @@ export default function AmbroisePartnersModern() {
     if (!navOuter || !hero) return;
 
     const onScroll = () => {
-      navOuter.classList.toggle('nav-scrolled', window.scrollY > stickyPx() + hero.offsetHeight - 80);
+      navOuter.classList.toggle('nav-scrolled', window.scrollY > hero.offsetHeight - 80);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -571,6 +556,7 @@ export default function AmbroisePartnersModern() {
     const ctx = canvas.getContext('2d')!;
     const isMobile = window.innerWidth <= 600;
     const heroContent = hero.querySelector<HTMLElement>('.hero-content');
+    const heroStats = hero.querySelector<HTMLElement>('.hero-stats');
     const PARTICLE_COUNT = isMobile ? 18000 : 40000;
     const STICKY_PX = stickyPx();
     let W = 0, H = 0, scrollProgress = 0, raf = 0;
@@ -584,6 +570,9 @@ export default function AmbroisePartnersModern() {
       hero.style.height = `${h}px`;
       hero.style.minHeight = `${h}px`;
       wrapper.style.height = `${h + STICKY_PX}px`;
+      /* The next section slides up over the pinned hero from the first pixel of scroll, instead of
+         the hero playing out first and a blank screen scrolling by after it. */
+      wrapper.style.marginBottom = `-${STICKY_PX}px`;
     };
 
     const wrapper = document.createElement('div');
@@ -720,10 +709,12 @@ export default function AmbroisePartnersModern() {
         ctx.fill();
       }
       if (fadeEl) {
-        const fadeOpacity = Math.min(Math.max((scrollProgress - 0.15) / 0.60, 0), 1);
-        fadeEl.style.opacity = String(fadeOpacity);
-        /* Fade the headline and buttons out before the background turns white */
-        if (heroContent) heroContent.style.opacity = String(Math.max(0, 1 - fadeOpacity * 1.6));
+        /* The hero no longer fades to white: the next section slides over it (see wrapper margin).
+           The headline, buttons and figures only dim slightly, so the hero stays readable while covered. */
+        fadeEl.style.opacity = '0';
+        const contentOpacity = String(1 - scrollProgress * 0.45);
+        if (heroContent) heroContent.style.opacity = contentOpacity;
+        if (heroStats) heroStats.style.opacity = contentOpacity;
       }
       raf=requestAnimationFrame(animate);
     }
@@ -838,11 +829,10 @@ export default function AmbroisePartnersModern() {
         .logo-sep{width:1px;height:16px;background:rgba(255,255,255,0.25);transition:background .35s;}
         .logo-name{display:flex;flex-direction:column;gap:4px;font-size:.78rem;letter-spacing:.28em;text-transform:uppercase;line-height:1;color:#fff;transition:color .35s;}
         .logo-l1{font-weight:600;}
-        .logo-l2{font-weight:400;opacity:.82;}
+        .logo-l2{font-weight:400;}
         .logo-mark{width:56px;height:35px;color:#fff;flex-shrink:0;transition:color .35s;}
         .nav-scrolled .logo-mark{color:var(--navy);}
         .nav-scrolled .logo-name{color:var(--navy);}
-        .nav-scrolled .logo-l2{color:var(--blue);opacity:1;}
         .nav-links{display:flex;gap:1.2rem;align-items:center;}
         .nav-links a{font-size:.88rem;font-weight:500;color:#fff;padding:.5rem 1rem;transition:color .18s;letter-spacing:.02em;}
         .nav-links a:hover{color:#fff;}
@@ -952,6 +942,16 @@ export default function AmbroisePartnersModern() {
         .hero-tags span{text-shadow:0 1px 12px rgba(3,10,36,.6);}
 
         /* ── KEY FIGURES ── */
+        .hero-content{padding-bottom:6.5rem;}
+        .hero-stats{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 4vw 1.6rem;will-change:opacity;}
+        .hero-stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.16);}
+        .hero-stat{display:flex;flex-direction:column;gap:.3rem;padding:1.2rem 1rem 0 1.2rem;border-left:1px solid rgba(255,255,255,.12);}
+        .hero-stat:first-child{border-left:none;padding-left:0;}
+        .hero-stat-value{font-family:var(--serif);font-weight:400;font-size:clamp(1.5rem,2.2vw,2rem);line-height:1.05;letter-spacing:-.01em;color:#fff;}
+        .hero-stat-label{font-size:.8rem;color:rgba(255,255,255,.62);line-height:1.4;}
+        .hero-stats-note{max-width:1200px;margin:.9rem auto 0;font-size:.68rem;color:rgba(255,255,255,.4);}
+        .figures{display:none;}
+        .figures,#services{position:relative;z-index:3;box-shadow:0 -18px 40px rgba(1,5,16,.18);}
         .figures{background:var(--white);border-bottom:1px solid var(--line);padding:3.2rem 2.5vw 2rem;}
         .figures-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5rem;}
         .figure{display:flex;flex-direction:column;gap:.35rem;padding-left:1.2rem;border-left:1px solid var(--line);}
@@ -961,44 +961,44 @@ export default function AmbroisePartnersModern() {
         .figures-note{max-width:1200px;margin:1.8rem auto 0;font-size:.75rem;color:var(--muted);}
 
         /* ── SERVICES CARDS ── */
-        .svc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem;}
-        .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:6px;padding:2rem 2rem 1.8rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
+        .svc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;}
+        .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:6px;padding:1.6rem 1.4rem 1.5rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
         .svc-card:hover{border-color:#c9d3e3;box-shadow:0 12px 30px rgba(3,10,36,.06);}
         .svc-num{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--blue);}
-        .svc-title{font-family:var(--serif);font-weight:400;font-size:1.65rem;letter-spacing:-.01em;line-height:1.15;}
-        .svc-desc{color:var(--muted);font-size:1.05rem;line-height:1.7;font-weight:300;flex-grow:1;}
-        .svc-tags{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding-top:.4rem;}
+        .svc-title{font-family:var(--serif);font-weight:400;font-size:1.35rem;letter-spacing:-.01em;line-height:1.15;}
+        .svc-desc{color:var(--muted);font-size:.95rem;line-height:1.65;font-weight:300;flex-grow:1;}
+        .svc-tags{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding-top:.4rem;}
 
         /* ── TEAM ── */
-        .team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem;}
-        .member{background:var(--accent-bg);border-radius:6px;padding:2.2rem 2.2rem 2rem;display:flex;flex-direction:column;gap:1rem;}
-        .member-head{display:flex;align-items:center;gap:1.3rem;margin-bottom:.4rem;}
-        .member-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;filter:grayscale(1);}
-        .member-initials{display:flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;font-family:var(--serif);font-size:1.9rem;letter-spacing:.02em;filter:none;}
-        .member-name{font-family:var(--serif);font-weight:400;font-size:1.6rem;letter-spacing:-.01em;line-height:1.15;}
-        .member-role{font-size:.8rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-top:.25rem;}
-        .member-formerly{font-size:.88rem;color:var(--muted);margin-top:.2rem;}
-        .member-bio{color:#4a4a4a;font-size:1rem;line-height:1.75;font-weight:300;}
-        .member-edu{font-size:.88rem;color:var(--ink);padding-top:1rem;border-top:1px solid #dde3ec;margin-top:auto;}
-        .member-link{font-size:.85rem;font-weight:500;color:var(--blue);}
+        .team-sec{background:var(--navy);color:#fff;padding:4.5rem 2.5vw 4.8rem;}
+        .team-head{text-align:center;max-width:820px;margin:0 auto 2.8rem;}
+        .team-sec .eyebrow{color:rgba(255,255,255,.6);}
+        .team-sec .section-title{color:#fff;margin-left:0;}
+        .team-row{display:flex;justify-content:center;gap:clamp(3rem,9vw,8rem);flex-wrap:wrap;}
+        .member{display:flex;flex-direction:column;align-items:center;text-align:center;}
+        .member-photo{width:clamp(150px,13vw,190px);height:auto;aspect-ratio:1;border-radius:50%;object-fit:cover;box-shadow:0 0 0 6px rgba(255,255,255,.06);}
+        .member-name{font-family:var(--serif);font-weight:400;font-size:1.4rem;letter-spacing:-.01em;margin-top:1.3rem;}
+        .member-role{font-size:.78rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:.35rem;}
+        .member-link{display:inline-flex;align-items:center;gap:.45rem;margin-top:1rem;padding:.45rem .95rem;border:1px solid rgba(255,255,255,.25);border-radius:4px;font-size:.8rem;font-weight:500;color:#fff;transition:background .2s,border-color .2s;}
+        .member-link:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.45);}
 
         /* ── SECTIONS ── */
         .section{max-width:1200px;margin:0 auto;padding:7rem 2.5vw;color:var(--ink);}
         .section-bg{background:var(--white);}
         .eyebrow{display:block;font-family:var(--sans);font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
-        .section-title{font-family:var(--serif);font-weight:400;font-size:clamp(2rem,3.5vw,3.2rem);line-height:1.1;letter-spacing:-.02em;margin-bottom:.3rem;margin-left:-.05em;}
-        .section-lede{font-family:var(--sans);color:var(--muted);font-size:1.3rem;max-width:100%;font-weight:300;line-height:1.65;letter-spacing:-.01em;}
-        .section-head{margin-bottom:2.5rem;}
+        .section-title{font-family:var(--serif);font-weight:400;font-size:clamp(1.9rem,2.6vw,2.5rem);line-height:1.1;letter-spacing:-.02em;margin-bottom:.3rem;margin-left:-.05em;}
+        .section-lede{font-family:var(--sans);color:var(--muted);font-size:1.08rem;max-width:100%;font-weight:300;line-height:1.65;letter-spacing:-.01em;}
+        .section-head{margin-bottom:2rem;}
 
         /* ── APPROACH ── */
-        .approach-panels{display:flex;flex-direction:column;gap:0;}
-        .approach-panel{display:grid;grid-template-columns:1fr 1fr;background:var(--accent-bg);}
+        .approach-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2.4rem;}
+        .approach-panel{display:flex;flex-direction:column;background:var(--accent-bg);}
         .approach-panel+.approach-panel .approach-text{border-top:none;}
-        .approach-text{padding:1.6rem 2rem 1.6rem 0;display:flex;flex-direction:column;justify-content:center;border-right:none;}
+        .approach-text{padding:1.2rem 0 0;display:flex;flex-direction:column;justify-content:center;border-right:none;}
         .approach-num{font-family:var(--serif);font-style:italic;font-size:1.1rem;color:#162d50;margin-bottom:.8rem;display:block;}
-        .approach-title{font-family:var(--serif);font-weight:400;font-size:1.4rem;letter-spacing:-.01em;margin-bottom:.7rem;line-height:1.15;}
-        .approach-desc{color:var(--muted);font-size:1.125rem;line-height:1.7;font-weight:300;}
-        .approach-canvas-wrap{background:var(--accent-bg);overflow:hidden;position:relative;min-height:160px;}
+        .approach-title{font-family:var(--serif);font-weight:400;font-size:1.3rem;letter-spacing:-.01em;margin-bottom:.7rem;line-height:1.15;}
+        .approach-desc{color:var(--muted);font-size:.98rem;line-height:1.65;font-weight:300;}
+        .approach-canvas-wrap{order:-1;background:var(--accent-bg);overflow:hidden;position:relative;height:clamp(120px,15vh,160px);border-bottom:1px solid var(--line);}
 
         /* ── VALUES ── */
         .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#fff;}
@@ -1010,10 +1010,10 @@ export default function AmbroisePartnersModern() {
 
         /* ── METHOD ── */
         .method-list{border-top:1px solid var(--line);}
-        .method-step{display:grid;grid-template-columns:80px 1fr;align-items:center;gap:1.2rem;padding:1rem 0;border-bottom:1px solid var(--line);}
-        .step-num{font-family:var(--serif);font-style:normal;font-size:2.8rem;color:#162d50;font-weight:400;letter-spacing:-.02em;}
-        .step-body h4{font-family:var(--serif);font-weight:400;font-size:1.4rem;letter-spacing:-.01em;margin-bottom:.3rem;}
-        .step-body p{color:var(--muted);font-size:1.125rem;line-height:1.7;font-weight:300;}
+        .method-step{display:grid;grid-template-columns:70px 1fr;align-items:center;gap:1rem;padding:.55rem 0;border-bottom:1px solid var(--line);}
+        .step-num{font-family:var(--serif);font-style:normal;font-size:2.2rem;color:#162d50;font-weight:400;letter-spacing:-.02em;}
+        .step-body h4{font-family:var(--serif);font-weight:400;font-size:1.2rem;letter-spacing:-.01em;margin-bottom:.3rem;}
+        .step-body p{color:var(--muted);font-size:.98rem;line-height:1.6;font-weight:300;}
 
         /* ── ABOUT ── */
         .about-split{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;}
@@ -1051,7 +1051,7 @@ export default function AmbroisePartnersModern() {
         .svc-tab:hover::after{transform:scaleX(1);}
         .svc-tab--active{color:var(--ink);}
         .svc-tab--active::after{transform:scaleX(1);}
-        .svc-tag{padding:7px 16px;border-radius:100px;font-size:.8rem;font-weight:500;letter-spacing:.02em;border:none;color:var(--navy);background:#e9eef6;transition:all .3s ease;font-family:var(--sans);white-space:nowrap;animation:svcFadeUp .35s cubic-bezier(0.25,0.1,0.25,1) both;}
+        .svc-tag{padding:5px 11px;border-radius:100px;font-size:.72rem;font-weight:500;letter-spacing:.02em;border:none;color:var(--navy);background:#e9eef6;transition:all .3s ease;font-family:var(--sans);white-space:nowrap;animation:svcFadeUp .35s cubic-bezier(0.25,0.1,0.25,1) both;}
         .svc-tag:hover{background:#dde5f1;}
         .svc-panel-anim{animation:svcFadeUp .4s cubic-bezier(0.25,0.1,0.25,1) forwards;}
         @keyframes svcFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
@@ -1088,7 +1088,7 @@ export default function AmbroisePartnersModern() {
         .footer-copy{font-size:.72rem;color:rgba(255,255,255,.6);letter-spacing:.03em;}
 
         /* ── DOMAINS GRID ── */
-        .domains-grid{display:flex;gap:6px;height:520px;}
+        .domains-grid{display:flex;gap:6px;height:clamp(260px,40vh,360px);}
         .domain-card{position:relative;border-radius:4px;overflow:hidden;flex-grow:1;flex-shrink:1;flex-basis:0;min-width:0;cursor:pointer;transition:flex-grow .5s var(--ease),flex-shrink .5s var(--ease),box-shadow .4s ease;}
         .domain-card--shrunk{flex-grow:.7;flex-shrink:1;}
         .domain-card--active{flex-grow:2;flex-shrink:0;box-shadow:0 12px 30px rgba(0,0,0,.18);}
@@ -1143,17 +1143,15 @@ export default function AmbroisePartnersModern() {
         @media(max-width:960px){
           .nav-links a:not(.nav-cta){display:none;}
           .nav-cta{padding:.55rem 1.3rem!important;font-size:.78rem!important;white-space:nowrap;}
-          .approach-panel{grid-template-columns:1fr;}
-          .approach-text{border-right:none;}
-          .approach-canvas-wrap{min-height:120px;}
+          .approach-panels{grid-template-columns:1fr;gap:1.8rem;}
           .values-grid{grid-template-columns:1fr;}
           .about-split{grid-template-columns:1fr;gap:3rem;}
           .method-step{grid-template-columns:60px 1fr;}
           .step-arrow{display:none;}
           .svc-tab{font-size:1rem;padding:0 0 14px 0;}
-          .svc-grid,.team-grid{grid-template-columns:1fr;}
+          .svc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
           .figures-inner{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2rem;}
-          .domains-grid{height:360px;gap:6px;}
+          .domains-grid{height:300px;gap:6px;}
           .domain-card--active{flex-grow:2;}
           .dalt-carousel{height:400px;}
           .domains-alt-section{padding:5rem 2.5vw;}
@@ -1190,17 +1188,17 @@ export default function AmbroisePartnersModern() {
           .eyebrow{font-size:.62rem;margin-bottom:.5rem;}
 
           /* New sections */
-          .figures{padding:2.4rem 4vw 1.6rem;}
+          .figures{display:block;padding:2.4rem 4vw 1.6rem;}
+          .hero-stats{display:none;}
+          .hero-content{padding-bottom:0;}
           .figure{padding-left:.9rem;}
+          .svc-grid{grid-template-columns:1fr;}
           .svc-card{padding:1.5rem 1.3rem 1.4rem;}
           .svc-title{font-size:1.35rem;}
           .svc-desc{font-size:.95rem;}
-          .member{padding:1.6rem 1.3rem 1.5rem;}
-          .member-head{gap:1rem;}
-          .member-photo{width:72px;height:72px;}
-          .member-initials{font-size:1.4rem;}
-          .member-name{font-size:1.3rem;}
-          .member-bio{font-size:.92rem;}
+          .team-row{gap:2.2rem;}
+          .member-photo{width:132px;}
+          .member-name{font-size:1.2rem;margin-top:1rem;}
           #team,#services{padding:3rem 4vw!important;}
 
           /* Services */
@@ -1215,11 +1213,10 @@ export default function AmbroisePartnersModern() {
           .sector-ticker{margin-top:2rem!important;}
 
           /* Approach */
-          .approach-panel{grid-template-columns:1fr;}
-          .approach-text{padding:1.2rem 0;border-right:none;}
+          .approach-text{padding:1rem 0 0;}
           .approach-title{font-size:1.15rem;}
           .approach-desc{font-size:.9rem;}
-          .approach-canvas-wrap{min-height:200px;}
+          .approach-canvas-wrap{height:120px;}
           .value-card{padding:1.4rem 1.2rem;}
           .value-title{font-size:1.2rem;}
           .value-desc{font-size:.9rem;}
@@ -1227,7 +1224,7 @@ export default function AmbroisePartnersModern() {
 
           /* Domains */
           .domains-grid{height:auto;gap:8px;flex-wrap:wrap;}
-          .domain-card{flex:1 1 45%!important;aspect-ratio:3/4;}
+          .domain-card{flex:1 1 45%!important;aspect-ratio:4/3;}
           .domain-card--shrunk{flex:1 1 45%!important;}
           .domain-card--active{flex:1 1 45%!important;}
           .domain-label{padding:.7rem .7rem;text-align:left;}
@@ -1351,6 +1348,7 @@ export default function AmbroisePartnersModern() {
           </div>
         </div>
         </div>
+        <HeroStats />
       </header>
 
       <FiguresBand />
@@ -1360,7 +1358,7 @@ export default function AmbroisePartnersModern() {
 
       {/* APPROACH */}
       <div style={{ background: 'var(--accent-bg)', width: '100%' }}>
-      <section style={{ padding: '5rem 2.5vw' }} id="approach">
+      <section style={{ padding: '4.5rem 2.5vw' }} id="approach">
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What sets us apart</span>
@@ -1411,7 +1409,7 @@ export default function AmbroisePartnersModern() {
 
       {/* METHOD */}
       <div style={{ background: 'var(--white)', width: '100%' }}>
-      <section style={{ padding: '5rem 2.5vw' }} id="method">
+      <section style={{ padding: '4.5rem 2.5vw' }} id="method">
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What drives results</span>

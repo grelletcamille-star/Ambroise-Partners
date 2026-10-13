@@ -54,8 +54,7 @@ body {
 .sp-nav .wordmark { color: var(--navy); }
 .wordmark-name { display: flex; flex-direction: column; gap: 4px; font-family: var(--sans); font-size: .75rem; letter-spacing: .28em; text-transform: uppercase; line-height: 1; }
 .wordmark-l1 { font-weight: 600; }
-.wordmark-l2 { font-weight: 400; opacity: .85; }
-.sp-nav .wordmark-l2 { color: var(--blue); opacity: 1; }
+.wordmark-l2 { font-weight: 400; }
 
 .sp-hero { background: var(--accent-bg); padding: 5rem 4vw 3.5rem; }
 .sp-hero-inner { max-width: 760px; margin: 0 auto; }
