@@ -326,7 +326,6 @@ function ServicesSection() {
                 <span className="svc-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{SVC_ICONS[s.id]}</svg>
                 </span>
-                <span className="svc-num">{String(i + 1).padStart(2, '0')}</span>
               </div>
               <h3 className="svc-title">{s.title}</h3>
               <p className="svc-desc">{s.description}</p>
@@ -1008,7 +1007,6 @@ export default function AmbroisePartnersModern() {
         .svc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;}
         .svc-icon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eaf0f8;color:var(--navy);transition:background .3s,color .3s;}
         .svc-card:hover .svc-icon{background:var(--navy);color:#fff;}
-        .svc-num{font-family:var(--sans);font-size:var(--fs-xs);font-weight:500;letter-spacing:.08em;color:var(--blue);}
         .svc-title{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;line-height:1.15;}
         .svc-desc{color:var(--muted);font-size:var(--fs-body);line-height:1.65;font-weight:400;flex-grow:1;}
         .svc-tags{display:flex;flex-wrap:wrap;list-style:none;padding-top:.9rem;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--muted);line-height:1.8;}
