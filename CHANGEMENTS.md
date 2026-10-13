@@ -5,7 +5,7 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 ## Ce qui change
 
 - **Équipe** : section *Team* sur fond marine, en bas de page avant le contact : photo, nom, titre et lien LinkedIn (format Valmont, sans bios). Photos tirées de la proposition Theraclion, passées en noir et blanc sur fond gris clair (`public/team/`).
-- **Chiffres clés** : en bas du hero dès l'arrivée sur le site ($90bn+, 15+ ans, 100+ sociétés, Paris · London) ; en bandeau sous le hero sur mobile.
+- **Chiffres clés** : en bas du hero dès l'arrivée sur le site ($90bn+, 15+ ans, 100+ sociétés) ; en bandeau sous le hero sur mobile.
 - **Hero** :
   - l'animation ADN est plus courte (360 px de défilement au lieu de 1 500), et la section Services glisse par-dessus le hero au lieu d'attendre la fin d'un écran vide ;
   - l'hélice d'ADN passe sur la droite pour ne plus couper le titre ; plus de boutons sous le titre ;

@@ -332,7 +332,6 @@ const FIGURES = [
   { value: '$90bn+', label: 'transaction value advised' },
   { value: '15+', label: 'years in healthcare investment banking' },
   { value: '100+', label: 'healthcare companies advised' },
-  { value: 'Paris · London', label: 'offices', small: true },
 ];
 
 /* Two placements for the same figures: inside the bottom of the hero on desktop (visible on load,
@@ -359,7 +358,7 @@ function FiguresBand() {
       <div className="figures-inner">
         {FIGURES.map(f => (
           <div key={f.label} className="figure reveal">
-            <span className={`figure-value${f.small ? ' figure-value--sm' : ''}`}>{f.value}</span>
+            <span className="figure-value">{f.value}</span>
             <span className="figure-label">{f.label}</span>
           </div>
         ))}
@@ -1012,7 +1011,7 @@ export default function AmbroisePartnersModern() {
         /* ── KEY FIGURES ── */
         .hero-content{padding-bottom:6.5rem;}
         .hero-stats{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 4vw 1.6rem;will-change:opacity;}
-        .hero-stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.16);}
+        .hero-stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.16);}
         .hero-stat{display:flex;flex-direction:column;gap:.25rem;padding:1.1rem 1rem 0 0;}
         .hero-stat-value{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);line-height:1.05;letter-spacing:-.01em;color:#fff;}
         .hero-stat-label{font-size:var(--fs-xs);color:rgba(255,255,255,.62);line-height:1.4;}
@@ -1023,10 +1022,9 @@ export default function AmbroisePartnersModern() {
         .figures::before,#services::before{content:'';position:absolute;left:0;right:0;top:-160px;height:160px;pointer-events:none;background:linear-gradient(to bottom,rgba(247,251,254,0),#f7fbfe);}
         .figures::before{background:linear-gradient(to bottom,rgba(255,255,255,0),#fff);}
         .figures{background:var(--white);border-bottom:1px solid var(--line);padding:3.2rem 2.5vw 2rem;}
-        .figures-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5rem;}
+        .figures-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;}
         .figure{display:flex;flex-direction:column;gap:.25rem;}
         .figure-value{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);line-height:1.05;letter-spacing:-.02em;color:var(--navy);}
-        .figure-value--sm{font-size:var(--fs-h3);}
         .figure-label{font-size:var(--fs-small);color:var(--muted);font-weight:400;line-height:1.45;}
         .figures-note{max-width:1200px;margin:1.8rem auto 0;font-size:var(--fs-xs);color:var(--muted);}
 
@@ -1219,7 +1217,7 @@ export default function AmbroisePartnersModern() {
           .step-arrow{display:none;}
           .svc-tab{font-size:var(--fs-body);padding:0 0 14px 0;}
           .svc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-          .figures-inner{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2rem;}
+          .figures-inner{grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;}
           .domains-grid{height:300px;gap:6px;}
           .domain-card--active{flex-grow:2;}
           .dalt-carousel{height:400px;}
