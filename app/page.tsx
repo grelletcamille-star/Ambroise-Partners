@@ -344,7 +344,6 @@ function ServicesSection() {
 const FIGURES = [
   { value: '$90bn+', label: 'transaction value advised' },
   { value: '15+', label: 'years in healthcare investment banking' },
-  { value: '100+', label: 'healthcare companies advised' },
 ];
 
 /* ─── Team ─── */
