@@ -317,8 +317,6 @@ const TEAM: Member[] = [
 ];
 
 /* Companies advised by team members, including in previous roles (from the firm's credentials). */
-const EXPERIENCE = ['Takeda', 'Sanofi', 'Ipsen', 'STADA', 'Sebia', 'Sysmex', 'Valneva', 'Innate Pharma', 'SERB', 'Ceva', 'Median', 'George Medicines', 'OSE Immunotherapeutics', 'Medincell', 'Theradiag', 'Integragen', 'Crossject', 'EOS imaging', 'Onward Medical', 'Lumenis', 'Medartis', 'Mauna Kea', 'Asker', 'Havea'];
-
 function TeamSection() {
   return (
     <section id="team" style={{ background: 'var(--white)', padding: '5rem 2.5vw' }}>
@@ -346,14 +344,6 @@ function TeamSection() {
               {m.linkedin && <a className="member-link" href={m.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>}
             </article>
           ))}
-        </div>
-
-        <div className="exp reveal">
-          <h3 className="exp-title">Selected experience</h3>
-          <p className="exp-note">Companies advised by members of our team, including in previous roles.</p>
-          <ul className="exp-list">
-            {EXPERIENCE.map(name => <li key={name}>{name}</li>)}
-          </ul>
         </div>
       </div>
     </section>
@@ -991,11 +981,6 @@ export default function AmbroisePartnersModern() {
         .member-bio{color:#4a4a4a;font-size:1rem;line-height:1.75;font-weight:300;}
         .member-edu{font-size:.88rem;color:var(--ink);padding-top:1rem;border-top:1px solid #dde3ec;margin-top:auto;}
         .member-link{font-size:.85rem;font-weight:500;color:var(--blue);}
-        .exp{margin-top:3.5rem;}
-        .exp-title{font-family:var(--serif);font-weight:400;font-size:1.4rem;letter-spacing:-.01em;}
-        .exp-note{font-size:.9rem;color:var(--muted);margin:.3rem 0 1.4rem;}
-        .exp-list{list-style:none;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);}
-        .exp-list li{font-family:var(--serif);font-size:1.02rem;color:var(--navy);padding:1.1rem .9rem;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;min-height:72px;line-height:1.25;}
 
         /* ── SECTIONS ── */
         .section{max-width:1200px;margin:0 auto;padding:7rem 2.5vw;color:var(--ink);}
@@ -1168,7 +1153,6 @@ export default function AmbroisePartnersModern() {
           .svc-tab{font-size:1rem;padding:0 0 14px 0;}
           .svc-grid,.team-grid{grid-template-columns:1fr;}
           .figures-inner{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2rem;}
-          .exp-list{grid-template-columns:repeat(4,minmax(0,1fr));}
           .domains-grid{height:360px;gap:6px;}
           .domain-card--active{flex-grow:2;}
           .dalt-carousel{height:400px;}
@@ -1217,8 +1201,6 @@ export default function AmbroisePartnersModern() {
           .member-initials{font-size:1.4rem;}
           .member-name{font-size:1.3rem;}
           .member-bio{font-size:.92rem;}
-          .exp-list{grid-template-columns:repeat(2,minmax(0,1fr));}
-          .exp-list li{font-size:.92rem;min-height:56px;padding:.8rem .6rem;}
           #team,#services{padding:3rem 4vw!important;}
 
           /* Services */
@@ -1341,8 +1323,8 @@ export default function AmbroisePartnersModern() {
           <div className="nav-links">
             <a href="#services">Services</a>
             <a href="#approach">Approach</a>
-            <a href="#team">Team</a>
             <a href="#domains">Expertise</a>
+            <a href="#team">Team</a>
             <a href="#contact" className="nav-cta">Contact us</a>
           </div>
         </nav>
@@ -1412,8 +1394,6 @@ export default function AmbroisePartnersModern() {
       </section>
       </div>
 
-      <TeamSection />
-
       <ExpertiseSection />
 
       {/* SECTOR TICKER */}
@@ -1455,6 +1435,8 @@ export default function AmbroisePartnersModern() {
       </div>
       </section>
       </div>
+
+      <TeamSection />
 
       {/* CONTACT */}
       <div style={{background:'var(--white)'}} id="contact">
@@ -1509,9 +1491,9 @@ export default function AmbroisePartnersModern() {
                 <div className="footer-col-title">Company</div>
                 <a href="#services">Services</a>
                 <a href="#approach">Approach</a>
-                <a href="#team">Team</a>
                 <a href="#domains">Expertise</a>
                 <a href="#method">Process</a>
+                <a href="#team">Team</a>
                     <a href="#contact">Contact</a>
               </div>
               <div className="footer-col">
