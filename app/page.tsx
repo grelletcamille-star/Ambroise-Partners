@@ -24,7 +24,7 @@ const LAND = '-52,-70;-48,-72;-48,-66;-44,-69;-44,170;-40,-70;-40,-65;-40,175;-3
    always sit on the right continent. `side` places the label (0 = dot only, too close to Paris). */
 const HUB = { name: 'Paris', lat: 48.86, lon: 2.35 };
 const CITIES = [
-  { name: 'London', lat: 51.51, lon: -0.13, side: 0 },
+  { name: 'London', lat: 51.51, lon: -0.13, side: 0, office: true },
   { name: 'Basel', lat: 47.56, lon: 7.59, side: 0 },
   { name: 'Boston', lat: 42.36, lon: -71.06, side: 0 },
   { name: 'New York', lat: 40.71, lon: -74.01, side: 2 },
@@ -149,15 +149,16 @@ function ApproachAnim({ type }: { type: 'dna' | 'globe' | 'execution' }) {
           if (q.z > 0) { ctx.fillStyle = rgba(BLUE, 0.9 * Math.max(0, vis)); ctx.beginPath(); ctx.arc(q.x, q.y, 1.8, 0, Math.PI * 2); ctx.fill(); }
         }
         if (end.z > 0) {
-          ctx.fillStyle = rgba(BLUE, 0.35 + 0.65 * end.z);
-          ctx.beginPath(); ctx.arc(end.x, end.y, 2.6, 0, Math.PI * 2); ctx.fill();
+          /* London is the firm's second office: same navy as Paris */
+          ctx.fillStyle = 'office' in c ? rgba(NAVY, 0.4 + 0.6 * end.z) : rgba(BLUE, 0.35 + 0.65 * end.z);
+          ctx.beginPath(); ctx.arc(end.x, end.y, 'office' in c ? 3 : 2.6, 0, Math.PI * 2); ctx.fill();
           if (c.side !== 0 && end.z > 0.18) {
             ctx.font = `500 9px ${SANS}`;
             ctx.fillStyle = rgba('95,95,95', Math.min(1, (end.z - 0.18) * 3));
             /* side: -1 label on the left, 1 on the right, 2 underneath (New York, which sits close to Paris) */
             ctx.textAlign = c.side === 2 ? 'center' : c.side > 0 ? 'left' : 'right';
             if (c.side === 2) ctx.fillText(c.name, end.x, end.y + 13);
-            else ctx.fillText(c.name, end.x + c.side * 6, end.y + 3);
+            else ctx.fillText(c.name, end.x + c.side * 6, end.y + ('office' in c ? 6 : 3));
           }
         }
       });
@@ -165,7 +166,8 @@ function ApproachAnim({ type }: { type: 'dna' | 'globe' | 'execution' }) {
         ctx.fillStyle = rgba(BLUE, 0.18); ctx.beginPath(); ctx.arc(hub.x, hub.y, 6 + 2 * Math.sin(t * 2.4), 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = rgba(NAVY, 1); ctx.beginPath(); ctx.arc(hub.x, hub.y, 3.6, 0, Math.PI * 2); ctx.fill();
         ctx.font = `600 9px ${SANS}`; ctx.fillStyle = rgba(NAVY, Math.min(1, hub.z * 3)); ctx.textAlign = 'center';
-        ctx.fillText('Paris', hub.x, hub.y - 9);
+        /* Paris and London sit a few pixels apart: one label for the two offices */
+        ctx.fillText('Paris · London', hub.x, hub.y - 9);
       }
     };
 
@@ -315,7 +317,7 @@ function ServicesSection() {
               <h3 className="svc-title">{s.title}</h3>
               <p className="svc-desc">{s.description}</p>
               <ul className="svc-tags" aria-label={`${s.title} services`}>
-                {s.tags.map(tag => <li key={tag} className="svc-tag">{tag}</li>)}
+                {s.tags.map(tag => <li key={tag}>{tag}</li>)}
               </ul>
             </article>
           ))}
@@ -1035,7 +1037,8 @@ export default function AmbroisePartnersModern() {
         .svc-num{font-family:var(--sans);font-size:var(--fs-xs);font-weight:500;letter-spacing:.08em;color:var(--blue);}
         .svc-title{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;line-height:1.15;}
         .svc-desc{color:var(--muted);font-size:var(--fs-body);line-height:1.65;font-weight:400;flex-grow:1;}
-        .svc-tags{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding-top:.4rem;}
+        .svc-tags{display:flex;flex-wrap:wrap;list-style:none;padding-top:.9rem;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--muted);line-height:1.8;}
+        .svc-tags li:not(:last-child)::after{content:'·';margin:0 .45rem;color:#b5bfcf;}
 
         /* ── TEAM ── */
         .team-sec{background:var(--navy);color:#fff;padding:4.5rem 2.5vw 4.8rem;}
@@ -1121,8 +1124,6 @@ export default function AmbroisePartnersModern() {
         .svc-tab:hover::after{transform:scaleX(1);}
         .svc-tab--active{color:var(--ink);}
         .svc-tab--active::after{transform:scaleX(1);}
-        .svc-tag{padding:5px 11px;border-radius:100px;font-size:var(--fs-xs);font-weight:500;letter-spacing:.02em;border:none;color:var(--navy);background:#e9eef6;transition:all .3s ease;font-family:var(--sans);white-space:nowrap;animation:svcFadeUp .35s cubic-bezier(0.25,0.1,0.25,1) both;}
-        .svc-tag:hover{background:#dde5f1;}
         .svc-panel-anim{animation:svcFadeUp .4s cubic-bezier(0.25,0.1,0.25,1) forwards;}
         @keyframes svcFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 
@@ -1271,7 +1272,6 @@ export default function AmbroisePartnersModern() {
           .svc-tabs{flex-direction:column;gap:0;border-bottom:none;margin-top:1.5rem!important;overflow:visible;}
           .svc-tab{font-size:var(--fs-body);padding:10px 0;white-space:nowrap;text-align:left;border-bottom:1px solid var(--line);}
           .svc-tab::after{bottom:0;}
-          .svc-tag{font-size:var(--fs-xs);padding:6px 14px;}
           .svc-desc{font-size:var(--fs-body)!important;line-height:1.7!important;}
           .svc-panel-anim{padding:32px 0!important;gap:28px!important;}
 
@@ -1327,7 +1327,6 @@ export default function AmbroisePartnersModern() {
         @media(max-width:480px){
           /* Services */
           .svc-tab{font-size:var(--fs-small);padding:8px 0;}
-          .svc-tag{font-size:.65rem;padding:5px 10px;}
 
           /* Ticker */
           .sector-ticker{padding:.7rem 0;}
