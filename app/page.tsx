@@ -7,9 +7,10 @@ import { COMPANY } from './lib/company';
 import LogoMark from './components/LogoMark';
 
 /* Height of the scroll-driven DNA animation before the page moves on. */
-const STICKY_DESKTOP = 460;
-const STICKY_MOBILE = 280;
-const stickyPx = () => (window.innerWidth <= 600 ? STICKY_MOBILE : STICKY_DESKTOP);
+/* The hero is no longer pinned: it scrolls like any section, and the DNA disperses while the
+   background lightens over the first half-screen of scroll. Pinning it left a large empty screen
+   to scroll through before the next section. */
+const HERO_PROGRESS_SHARE = 0.5;
 
 /* ─── Animated illustrations for the three approach pillars ───
    One canvas per pillar: a turning DNA helix, a globe swinging between the Americas and Asia with
@@ -327,47 +328,12 @@ function ServicesSection() {
   );
 }
 
-/* ─── Key figures (shown under the hero) ─── */
+/* ─── Key figures (shown under the team) ─── */
 const FIGURES = [
   { value: '$90bn+', label: 'transaction value advised' },
   { value: '15+', label: 'years in healthcare investment banking' },
   { value: '100+', label: 'healthcare companies advised' },
-  { value: 'Paris · London', label: 'offices', small: true },
 ];
-
-/* Two placements for the same figures: inside the bottom of the hero on desktop (visible on load,
-   fades out with the headline), and as a band under the hero on phones, where the hero has no room. */
-function HeroStats() {
-  return (
-    <div className="hero-stats" aria-label="Key figures">
-      <div className="hero-stats-inner">
-        {FIGURES.map(f => (
-          <div key={f.label} className="hero-stat">
-            <span className="hero-stat-value">{f.value}</span>
-            <span className="hero-stat-label">{f.label}</span>
-          </div>
-        ))}
-      </div>
-      <p className="hero-stats-note">Including transactions executed by team members in previous roles.</p>
-    </div>
-  );
-}
-
-function FiguresBand() {
-  return (
-    <section className="figures" aria-label="Key figures">
-      <div className="figures-inner">
-        {FIGURES.map(f => (
-          <div key={f.label} className="figure reveal">
-            <span className={`figure-value${f.small ? ' figure-value--sm' : ''}`}>{f.value}</span>
-            <span className="figure-label">{f.label}</span>
-          </div>
-        ))}
-      </div>
-      <p className="figures-note">Including transactions executed by team members in previous roles.</p>
-    </section>
-  );
-}
 
 /* ─── Team ─── */
 type Member = { name: string; role: string; photo: string; linkedin: string };
@@ -398,6 +364,16 @@ function TeamSection() {
           </article>
         ))}
       </div>
+      {/* Key figures, under the team they belong to */}
+      <div className="team-figures reveal">
+        {FIGURES.map(f => (
+          <div key={f.label} className="team-figure">
+            <span className="team-figure-value">{f.value}</span>
+            <span className="team-figure-label">{f.label}</span>
+          </div>
+        ))}
+      </div>
+      <p className="team-figures-note">Including transactions executed by team members in previous roles.</p>
     </section>
   );
 }
@@ -606,7 +582,7 @@ export default function AmbroisePartnersModern() {
     if (!navOuter || !hero) return;
 
     const onScroll = () => {
-      navOuter.classList.toggle('nav-scrolled', window.scrollY > stickyPx() * 0.7 + hero.offsetHeight - 80);
+      navOuter.classList.toggle('nav-scrolled', window.scrollY > hero.offsetHeight - 80);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -623,9 +599,7 @@ export default function AmbroisePartnersModern() {
     const ctx = canvas.getContext('2d')!;
     const isMobile = window.innerWidth <= 600;
     const heroContent = hero.querySelector<HTMLElement>('.hero-content');
-    const heroStats = hero.querySelector<HTMLElement>('.hero-stats');
     const PARTICLE_COUNT = isMobile ? 18000 : 40000;
-    const STICKY_PX = stickyPx();
     let W = 0, H = 0, scrollProgress = 0, raf = 0;
 
     let fadeEl: HTMLElement | null = null;
@@ -636,15 +610,12 @@ export default function AmbroisePartnersModern() {
       const h = window.innerHeight;
       hero.style.height = `${h}px`;
       hero.style.minHeight = `${h}px`;
-      wrapper.style.height = `${h + STICKY_PX}px`;
-      /* The DNA disperses over the first 70% of the pinned scroll, then the next section slides up
-         over the hero: the animation stays visible, with no blank screen scrolling by after it. */
-      wrapper.style.marginBottom = `-${Math.round(STICKY_PX * 0.3)}px`;
+      wrapper.style.height = `${h}px`;
     };
 
     const wrapper = document.createElement('div');
     wrapper.id = 'hero-wrapper';
-    wrapper.style.cssText = `position:relative;height:${window.innerHeight + STICKY_PX}px;`;
+    wrapper.style.cssText = `position:relative;height:${window.innerHeight}px;`;
     hero.parentNode!.insertBefore(wrapper, hero);
     wrapper.appendChild(hero);
     hero.style.position = 'sticky';
@@ -777,20 +748,18 @@ export default function AmbroisePartnersModern() {
         ctx.fill();
       }
       if (fadeEl) {
-        /* The DNA disperses while the hero glows from navy to blue to white; by the time the next
-           section slides up (70% of the pinned scroll, see wrapper margin), the bottom of the hero is
-           white and the two meet without a seam. */
-        const fadeOpacity = Math.min(Math.max((scrollProgress - 0.1) / 0.55, 0), 1);
+        /* The DNA disperses while the hero lightens from navy to slate to the next section's light
+           background, so the two meet without a seam as Services comes up. */
+        const fadeOpacity = Math.min(Math.max(scrollProgress / 0.25, 0), 1);
         fadeEl.style.opacity = String(fadeOpacity);
-        /* Fade the headline, buttons and figures out before the background turns light */
+        /* Fade the headline and tags out before the background turns light */
         const contentOpacity = String(Math.max(0, 1 - fadeOpacity * 1.6));
         if (heroContent) heroContent.style.opacity = contentOpacity;
-        if (heroStats) heroStats.style.opacity = contentOpacity;
       }
       raf=requestAnimationFrame(animate);
     }
 
-    const onScroll=()=>{ scrollProgress=Math.min(Math.max(window.scrollY/STICKY_PX,0),1); };
+    const onScroll=()=>{ scrollProgress=Math.min(Math.max(window.scrollY/(window.innerHeight*HERO_PROGRESS_SHARE),0),1); };
     window.addEventListener('scroll',onScroll,{passive:true});
 
     const onResize = () => {
@@ -866,7 +835,9 @@ export default function AmbroisePartnersModern() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <style jsx global>{`
         /* Type scale: two families (Lora for headings, DM Sans for text), two weights each, six sizes */
-        :root{--fs-display:clamp(2.8rem,4.8vw,4.6rem);--fs-h2:clamp(1.8rem,2.6vw,2.4rem);--fs-h3:1.25rem;--fs-lead:1.08rem;--fs-body:.98rem;--fs-small:.875rem;--fs-xs:.75rem;}
+        :root{--fs-display:clamp(2.8rem,4.8vw,4.6rem);--fs-h2:clamp(1.8rem,2.6vw,2.4rem);--fs-h3:1.25rem;--fs-lead:1.08rem;--fs-body:.98rem;--fs-small:.875rem;--fs-xs:.75rem;
+          /* one corner radius for every box (cards, photos, fields); buttons stay pill-shaped */
+          --radius:8px;}
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
         a,button{-webkit-tap-highlight-color:transparent;}
 
@@ -903,7 +874,7 @@ export default function AmbroisePartnersModern() {
         .logo-name{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-xs);letter-spacing:.28em;text-transform:uppercase;line-height:1;color:#fff;transition:color .35s;}
         .logo-l1{font-weight:500;}
         .logo-l2{font-weight:400;}
-        .logo-mark{width:56px;height:35px;color:#fff;flex-shrink:0;transition:color .35s;}
+        .logo-mark{width:37px;height:35px;color:#fff;flex-shrink:0;transition:color .35s;}
         .nav-scrolled .logo-mark{color:var(--navy);}
         .nav-scrolled .logo-name{color:var(--navy);}
         .nav-links{display:flex;gap:1.2rem;align-items:center;}
@@ -1010,29 +981,11 @@ export default function AmbroisePartnersModern() {
         .hero-tags span{text-shadow:0 1px 12px rgba(3,10,36,.6);}
 
         /* ── KEY FIGURES ── */
-        .hero-content{padding-bottom:6.5rem;}
-        .hero-stats{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 4vw 1.6rem;will-change:opacity;}
-        .hero-stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.16);}
-        .hero-stat{display:flex;flex-direction:column;gap:.25rem;padding:1.1rem 1rem 0 0;}
-        .hero-stat-value{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);line-height:1.05;letter-spacing:-.01em;color:#fff;}
-        .hero-stat-label{font-size:var(--fs-xs);color:rgba(255,255,255,.62);line-height:1.4;}
-        .hero-stats-note{max-width:1200px;margin:.9rem auto 0;font-size:var(--fs-xs);color:rgba(255,255,255,.4);}
-        .figures{display:none;}
-        .figures,#services{position:relative;z-index:3;}
-        /* soft edge where the section slides over the hero's glow */
-        .figures::before,#services::before{content:'';position:absolute;left:0;right:0;top:-160px;height:160px;pointer-events:none;background:linear-gradient(to bottom,rgba(247,251,254,0),#f7fbfe);}
-        .figures::before{background:linear-gradient(to bottom,rgba(255,255,255,0),#fff);}
-        .figures{background:var(--white);border-bottom:1px solid var(--line);padding:3.2rem 2.5vw 2rem;}
-        .figures-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5rem;}
-        .figure{display:flex;flex-direction:column;gap:.25rem;}
-        .figure-value{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);line-height:1.05;letter-spacing:-.02em;color:var(--navy);}
-        .figure-value--sm{font-size:var(--fs-h3);}
-        .figure-label{font-size:var(--fs-small);color:var(--muted);font-weight:400;line-height:1.45;}
-        .figures-note{max-width:1200px;margin:1.8rem auto 0;font-size:var(--fs-xs);color:var(--muted);}
+        #services{position:relative;z-index:3;}
 
         /* ── SERVICES CARDS ── */
         .svc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;}
-        .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:6px;padding:1.6rem 1.4rem 1.5rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
+        .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:var(--radius);padding:1.6rem 1.4rem 1.5rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
         .svc-card:hover{border-color:#c9d3e3;box-shadow:0 12px 30px rgba(3,10,36,.06);}
         .svc-num{font-family:var(--sans);font-size:var(--fs-xs);font-weight:500;letter-spacing:.08em;color:var(--blue);}
         .svc-title{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;line-height:1.15;}
@@ -1045,6 +998,11 @@ export default function AmbroisePartnersModern() {
         .team-head{text-align:center;max-width:820px;margin:0 auto 2.8rem;}
         .team-sec .eyebrow{color:rgba(255,255,255,.6);}
         .team-sec .section-title{color:#fff;margin-left:0;}
+        .team-figures{display:flex;justify-content:center;gap:clamp(2.5rem,7vw,6rem);max-width:900px;margin:3.2rem auto 0;padding-top:2.2rem;border-top:1px solid rgba(255,255,255,.12);text-align:center;}
+        .team-figure{display:flex;flex-direction:column;gap:.3rem;}
+        .team-figure-value{font-family:var(--serif);font-size:var(--fs-h2);line-height:1;color:#fff;}
+        .team-figure-label{font-size:var(--fs-xs);color:rgba(255,255,255,.6);}
+        .team-figures-note{text-align:center;margin-top:1.2rem;font-size:var(--fs-xs);color:rgba(255,255,255,.4);}
         .team-row{display:flex;justify-content:center;gap:clamp(3rem,9vw,8rem);flex-wrap:wrap;}
         .member{display:flex;flex-direction:column;align-items:center;text-align:center;}
         .member-photo{width:clamp(150px,13vw,190px);height:auto;aspect-ratio:1;border-radius:50%;object-fit:cover;box-shadow:0 0 0 6px rgba(255,255,255,.06);}
@@ -1096,19 +1054,19 @@ export default function AmbroisePartnersModern() {
         .btn-dark:hover{background:var(--navy-hover);transform:translateY(-2px);box-shadow:0 10px 26px rgba(3,10,36,.2);}
         .btn-outline{display:inline-flex;align-items:center;white-space:nowrap;border:1.5px solid #cfd5df;color:var(--ink);padding:.8rem 1.7rem;border-radius:100px;font-size:var(--fs-xs);font-weight:500;letter-spacing:.04em;transition:border-color .22s,color .22s;}
         .btn-outline:hover{border-color:var(--blue);color:var(--blue);}
-        .about-dark{background:var(--dark);border-radius:4px;padding:3.5rem 3rem;color:#fff;position:relative;overflow:hidden;}
+        .about-dark{background:var(--dark);border-radius:var(--radius);padding:3.5rem 3rem;color:#fff;position:relative;overflow:hidden;}
         .about-dark-label{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;margin-bottom:1.5rem;position:relative;}
         .about-dark::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(3,10,36,.22) 0%,transparent 70%);border-radius:50%;}
 
         /* ── CONTACT ── */
-        .form-msg{text-align:center;padding:1rem 1.5rem;border-radius:8px;font-family:var(--sans);font-size:var(--fs-small);font-weight:400;animation:svcFadeUp .4s ease both;}
+        .form-msg{text-align:center;padding:1rem 1.5rem;border-radius:var(--radius);font-family:var(--sans);font-size:var(--fs-small);font-weight:400;animation:svcFadeUp .4s ease both;}
         .form-msg--ok{background:#f0faf0;color:#1a7a2e;border:1px solid #c3e6c3;}
         .form-msg--err{background:#fdf0f0;color:#a12;border:1px solid #e6c3c3;}
         .submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
         .contact-wrap{max-width:700px;margin:0 auto;padding:3.5rem 2.5vw;text-align:center;display:flex;flex-direction:column;align-items:center;}
         .contact-form{margin-top:2rem;text-align:left;display:flex;flex-direction:column;gap:.9rem;width:100%;max-width:600px;}
         .fl{display:block;font-size:var(--fs-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem;}
-        .fi,.ft{width:100%;background:#fff;border:1px solid var(--line);border-radius:4px;padding:.9rem 1.15rem;font-family:var(--sans);font-size:var(--fs-body);color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s;}
+        .fi,.ft{width:100%;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:.9rem 1.15rem;font-family:var(--sans);font-size:var(--fs-body);color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s;}
         .fi:focus,.ft:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(3,10,36,.1);}
         .ft{min-height:90px;resize:vertical;}
         .fc{display:flex;gap:.7rem;align-items:flex-start;font-size:var(--fs-xs);color:var(--muted);cursor:pointer;line-height:1.55;font-weight:400;}
@@ -1144,7 +1102,7 @@ export default function AmbroisePartnersModern() {
         .footer-logo{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);color:#fff;letter-spacing:-.01em;}
         .footer-logo-sep{width:1px;height:14px;background:rgba(255,255,255,.25);}
         .footer-brand-name{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-xs);letter-spacing:.28em;text-transform:uppercase;line-height:1;color:#fff;}
-        .footer-mark{width:54px;height:34px;color:#fff;flex-shrink:0;}
+        .footer-mark{width:36px;height:34px;color:#fff;flex-shrink:0;}
         .footer-brand-desc{font-size:var(--fs-small);line-height:1.7;color:rgba(255,255,255,.72);font-weight:400;max-width:28ch;margin-bottom:1rem;}
         .footer-contact{display:flex;flex-direction:column;gap:.3rem;}
         .footer-contact a,.footer-contact span{font-size:var(--fs-xs);color:rgba(255,255,255,.72);font-weight:400;transition:color .18s;}
@@ -1160,7 +1118,7 @@ export default function AmbroisePartnersModern() {
 
         /* ── DOMAINS GRID ── */
         .domains-grid{display:flex;gap:6px;height:clamp(260px,40vh,360px);}
-        .domain-card{position:relative;border-radius:4px;overflow:hidden;flex-grow:1;flex-shrink:1;flex-basis:0;min-width:0;cursor:pointer;transition:flex-grow .5s var(--ease),flex-shrink .5s var(--ease),box-shadow .4s ease;}
+        .domain-card{position:relative;border-radius:var(--radius);overflow:hidden;flex-grow:1;flex-shrink:1;flex-basis:0;min-width:0;cursor:pointer;transition:flex-grow .5s var(--ease),flex-shrink .5s var(--ease),box-shadow .4s ease;}
         .domain-card--shrunk{flex-grow:.7;flex-shrink:1;}
         .domain-card--active{flex-grow:2;flex-shrink:0;box-shadow:0 12px 30px rgba(0,0,0,.18);}
         .domain-img{position:absolute;inset:0;transition:transform .55s cubic-bezier(0.16,1,0.3,1);}
@@ -1189,7 +1147,7 @@ export default function AmbroisePartnersModern() {
         .dalt-tab.active{color:var(--ink);font-weight:500;}
         .dalt-indicator{position:absolute;bottom:0;height:2px;background:var(--ink);border-radius:1px;transition:left .4s cubic-bezier(0.33,1,0.68,1),width .4s cubic-bezier(0.33,1,0.68,1);pointer-events:none;}
         .dalt-carousel{width:100%;margin-top:2.5rem;position:relative;height:460px;}
-        .dalt-card{position:absolute;left:50%;top:50%;border-radius:4px;overflow:hidden;transition:transform .7s cubic-bezier(0.33,1,0.68,1),opacity .5s ease,width .7s cubic-bezier(0.33,1,0.68,1),height .7s cubic-bezier(0.33,1,0.68,1),box-shadow .5s ease;will-change:transform,opacity,width,height;}
+        .dalt-card{position:absolute;left:50%;top:50%;border-radius:var(--radius);overflow:hidden;transition:transform .7s cubic-bezier(0.33,1,0.68,1),opacity .5s ease,width .7s cubic-bezier(0.33,1,0.68,1),height .7s cubic-bezier(0.33,1,0.68,1),box-shadow .5s ease;will-change:transform,opacity,width,height;}
         .dalt-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.05) 45%,transparent 100%);}
         .dalt-card-label{position:absolute;bottom:0;left:0;right:0;padding:1.5rem 1.3rem;transition:opacity .3s ease;}
         .dalt-card-name{font-family:var(--serif);font-weight:400;font-size:var(--fs-body);line-height:1.2;color:#fff;margin:0;text-shadow:0 1px 10px rgba(0,0,0,0.4);}
@@ -1219,7 +1177,6 @@ export default function AmbroisePartnersModern() {
           .step-arrow{display:none;}
           .svc-tab{font-size:var(--fs-body);padding:0 0 14px 0;}
           .svc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-          .figures-inner{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:2rem;}
           .domains-grid{height:300px;gap:6px;}
           .domain-card--active{flex-grow:2;}
           .dalt-carousel{height:400px;}
@@ -1231,7 +1188,7 @@ export default function AmbroisePartnersModern() {
 
           /* Nav */
           nav{padding:0 4vw;height:56px;}
-          .logo-mark{width:46px;height:29px;}
+          .logo-mark{width:31px;height:29px;}
           .logo-name{font-size:var(--fs-xs);letter-spacing:.24em;}
           .logo-sep{height:13px;}
           .nav-cta{padding:.48rem 1.1rem!important;font-size:var(--fs-xs)!important;}
@@ -1256,9 +1213,8 @@ export default function AmbroisePartnersModern() {
           .eyebrow{font-size:.62rem;margin-bottom:.5rem;}
 
           /* New sections */
-          .figures{display:block;padding:2.4rem 4vw 1.6rem;}
-          .hero-stats{display:none;}
-          .hero-content{padding-bottom:0;}
+          .team-figures{gap:1.4rem;margin-top:2.4rem;}
+          .team-figure-value{font-size:1.5rem;}
           .svc-grid{grid-template-columns:1fr;}
           .svc-card{padding:1.5rem 1.3rem 1.4rem;}
           .svc-title{font-size:var(--fs-h3);}
@@ -1409,10 +1365,7 @@ export default function AmbroisePartnersModern() {
           </div>
         </div>
         </div>
-        <HeroStats />
       </header>
-
-      <FiguresBand />
 
       {/* SERVICES */}
       <ServicesSection />

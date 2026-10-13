@@ -50,7 +50,7 @@ body {
 .sp-cta:hover { background: var(--navy-hover); }
 
 .wordmark { display: flex; align-items: center; gap: .7rem; color: inherit; }
-.wordmark-mark { width: 54px; height: 34px; flex-shrink: 0; }
+.wordmark-mark { width: 36px; height: 34px; flex-shrink: 0; }
 .sp-nav .wordmark { color: var(--navy); }
 .wordmark-name { display: flex; flex-direction: column; gap: 4px; font-family: var(--sans); font-size: .75rem; letter-spacing: .28em; text-transform: uppercase; line-height: 1; }
 .wordmark-l1 { font-weight: 500; }
@@ -83,7 +83,7 @@ body {
 @media (max-width: 600px) {
   .sp-links a:not(.sp-cta) { display: none; }
   .sp-nav-inner { height: 56px; }
-  .wordmark-mark { width: 45px; height: 28px; }
+  .wordmark-mark { width: 30px; height: 28px; }
   .wordmark-name { font-size: .66rem; letter-spacing: .24em; }
   .sp-hero { padding: 3.5rem 5vw 2.5rem; }
   .sp-content { padding: 2.5rem 5vw 4rem; }
