@@ -7,139 +7,230 @@ import { COMPANY } from './lib/company';
 import LogoMark from './components/LogoMark';
 
 /* Height of the scroll-driven DNA animation before the page moves on. */
-const STICKY_DESKTOP = 360;
-const STICKY_MOBILE = 220;
+const STICKY_DESKTOP = 460;
+const STICKY_MOBILE = 280;
 const stickyPx = () => (window.innerWidth <= 600 ? STICKY_MOBILE : STICKY_DESKTOP);
 
-/* ─── Line illustrations for the three approach pillars ───
-   Drawn in SVG (crisp at any size, no animation loop running in the background). Lines draw in
-   and nodes appear when the panel scrolls into view (`.visible`, set by the reveal observer). */
-const hexPts = (cx: number, cy: number, r: number) =>
-  Array.from({ length: 6 }, (_, k) => {
-    const a = (Math.PI / 180) * (60 * k - 90);
-    return [+(cx + r * Math.cos(a)).toFixed(1), +(cy + r * Math.sin(a)).toFixed(1)] as [number, number];
-  });
+/* ─── Animated illustrations for the three approach pillars ───
+   One canvas per pillar: a turning DNA helix, a globe swinging between the Americas and Asia with
+   live links from Paris, and a mandate gauge running round its milestones. The loop only runs while the canvas is on screen, and
+   draws a single still frame when the visitor prefers reduced motion. */
 
-function ScienceArt() {
-  const r = 21, w = r * Math.sqrt(3);
-  const Y = 50;
-  const rings = [hexPts(150, Y, r), hexPts(150 + w, Y, r), hexPts(150 + w / 2, Y + 1.5 * r, r)];
-  const key = (p: number[]) => p.join(',');
-  const atoms = new Map<string, [number, number]>();
-  const bonds = new Set<string>();
-  rings.forEach(ring => ring.forEach((p, k) => {
-    atoms.set(key(p), p);
-    const q = ring[(k + 1) % 6];
-    const e = [key(p), key(q)].sort().join('|');
-    bonds.add(e);
-  }));
-  const bondList = [...bonds].map(e => e.split('|').map(k => atoms.get(k)!));
-  const atomList = [...atoms.values()];
-  // side chains: from the left ring and from the lower ring
-  const L = rings[0][4], D = rings[2][3], U = rings[1][1];
-  const chains: [number, number][][] = [
-    [L, [L[0] - 22, L[1] - 12], [L[0] - 44, L[1]]],
-    [D, [D[0] - 10, D[1] + 18]],
-    [U, [U[0] + 22, U[1] - 12], [U[0] + 44, U[1]]],
-  ];
-  return (
-    <svg className="apx" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <circle cx="168" cy="68" r="62" className="apx-faint" />
-      <circle cx="168" cy="68" r="42" className="apx-faint apx-dash" />
-      <g className="apx-float">
-        {bondList.map(([p, q], i) => (
-          <line key={i} x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} pathLength={1} className="apx-line apx-draw" style={{ ['--d' as string]: `${i * 0.04}s` }} />
-        ))}
-        {/* inner double bonds */}
-        {[rings[0], rings[1], rings[2]].map((ring, i) => {
-          const [p, q] = [ring[(i * 2) % 6], ring[(i * 2 + 1) % 6]];
-          const c = i === 0 ? [150, Y] : i === 1 ? [150 + w, Y] : [150 + w / 2, Y + 1.5 * r];
-          const sh = (v: number[]) => [c[0] + (v[0] - c[0]) * 0.72, c[1] + (v[1] - c[1]) * 0.72];
-          const [a2, b2] = [sh(p), sh(q)];
-          return <line key={`d${i}`} x1={a2[0]} y1={a2[1]} x2={b2[0]} y2={b2[1]} pathLength={1} className="apx-line apx-thin apx-draw" style={{ ['--d' as string]: `${0.6 + i * 0.1}s` }} />;
-        })}
-        {chains.map((c, i) => (
-          <polyline key={`c${i}`} points={c.map(p => p.join(',')).join(' ')} pathLength={1} className="apx-line apx-draw" style={{ ['--d' as string]: `${0.7 + i * 0.12}s` }} />
-        ))}
-        {atomList.map((p, i) => (
-          <circle key={i} cx={p[0]} cy={p[1]} r={2.6} className="apx-atom apx-pop" style={{ ['--d' as string]: `${0.3 + i * 0.03}s` }} />
-        ))}
-        {chains.map((c, i) => {
-          const end = c[c.length - 1];
-          return <circle key={`e${i}`} cx={end[0]} cy={end[1]} r={4.2} className="apx-accent apx-pop apx-pulse" style={{ ['--d' as string]: `${1.1 + i * 0.12}s` }} />;
-        })}
-        <text x={chains[0][2][0] - 8} y={chains[0][2][1] + 3} textAnchor="end" className="apx-chem">N</text>
-        <text x={chains[1][1][0] + 9} y={chains[1][1][1] + 8} textAnchor="middle" className="apx-chem">O</text>
-        <text x={chains[2][2][0] + 8} y={chains[2][2][1] + 3} className="apx-chem">OH</text>
-      </g>
-    </svg>
-  );
-}
+/* Land mask for the globe: one point every ~4° (lat,lon), generated from Natural Earth 110m
+   (world-atlas `land-110m`). 671 points, enough to read the continents at this size. */
+const LAND = '-52,-70;-48,-72;-48,-66;-44,-69;-44,170;-40,-70;-40,-65;-40,175;-36,-71;-36,-66;-36,-61;-36,141;-36,146;-32,-67;-32,-62;-32,-57;-32,-53;-32,23;-32,28;-32,117;-32,122;-32,127;-32,136;-32,141;-32,145;-32,150;-28,-67;-28,-62;-28,-58;-28,-53;-28,19;-28,24;-28,28;-28,114;-28,119;-28,124;-28,128;-28,133;-28,137;-28,142;-28,146;-28,151;-24,-66;-24,-62;-24,-57;-24,-53;-24,-49;-24,17;-24,21;-24,26;-24,30;-24,35;-24,118;-24,122;-24,126;-24,131;-24,135;-24,140;-24,144;-24,148;-20,-69;-20,-65;-20,-61;-20,-57;-20,-52;-20,-48;-20,-44;-20,16;-20,20;-20,24;-20,29;-20,33;-20,46;-20,122;-20,126;-20,131;-20,135;-20,139;-20,144;-20,148;-16,-72;-16,-68;-16,-63;-16,-59;-16,-55;-16,-51;-16,-47;-16,-43;-16,16;-16,20;-16,24;-16,28;-16,32;-16,36;-16,49;-16,128;-16,132;-16,136;-16,145;-12,-74;-12,-70;-12,-65;-12,-61;-12,-57;-12,-53;-12,-49;-12,-45;-12,-41;-12,16;-12,20;-12,24;-12,29;-12,33;-12,37;-12,143;-8,-79;-8,-75;-8,-71;-8,-67;-8,-63;-8,-59;-8,-55;-8,-51;-8,-47;-8,-43;-8,-39;-8,14;-8,18;-8,22;-8,26;-8,30;-8,34;-8,38;-8,111;-8,115;-8,139;-8,143;-8,147;-8,159;-4,-80;-4,-76;-4,-72;-4,-68;-4,-64;-4,-60;-4,-56;-4,-52;-4,-48;-4,-44;-4,-40;-4,12;-4,16;-4,20;-4,24;-4,29;-4,33;-4,37;-4,105;-4,137;-4,141;-4,153;0,-80;0,-76;0,-72;0,-68;0,-64;0,-60;0,-56;0,-52;0,12;0,16;0,20;0,24;0,28;0,32;0,36;0,40;0,100;0,112;0,116;0,120;0,128;4,-76;4,-72;4,-68;4,-64;4,-60;4,-56;4,-52;4,12;4,16;4,20;4,24;4,29;4,33;4,37;4,41;4,45;4,97;4,117;8,-75;8,-71;8,-67;8,-63;8,-10;8,-6;8,-2;8,2;8,6;8,10;8,14;8,18;8,22;8,26;8,30;8,34;8,38;8,42;8,46;8,123;12,-86;12,-12;12,-8;12,-4;12,0;12,4;12,8;12,12;12,16;12,20;12,24;12,29;12,33;12,37;12,41;12,78;12,106;16,-97;16,-93;16,-14;16,-9;16,-5;16,-1;16,3;16,7;16,11;16,16;16,20;16,24;16,28;16,32;16,36;16,45;16,49;16,74;16,78;16,95;16,99;16,103;16,107;20,-103;20,-99;20,-14;20,-10;20,-5;20,-1;20,3;20,7;20,12;20,16;20,20;20,24;20,29;20,33;20,41;20,46;20,50;20,54;20,75;20,80;20,84;20,97;20,101;20,105;24,-110;24,-106;24,-101;24,-14;24,-9;24,-5;24,0;24,4;24,8;24,13;24,17;24,21;24,26;24,30;24,35;24,39;24,43;24,48;24,52;24,56;24,70;24,74;24,78;24,83;24,87;24,91;24,96;24,100;24,105;24,109;24,113;24,118;28,-108;28,-103;28,-98;28,-12;28,-8;28,-3;28,1;28,6;28,10;28,15;28,19;28,24;28,28;28,33;28,37;28,42;28,47;28,56;28,60;28,65;28,69;28,74;28,78;28,83;28,87;28,92;28,96;28,101;28,105;28,110;28,114;28,119;32,-114;32,-109;32,-105;32,-100;32,-95;32,-90;32,-86;32,-81;32,-5;32,-1;32,4;32,9;32,13;32,23;32,37;32,42;32,46;32,51;32,56;32,61;32,65;32,70;32,75;32,79;32,84;32,89;32,94;32,98;32,103;32,108;32,112;32,117;32,131;36,-121;36,-116;36,-111;36,-106;36,-101;36,-96;36,-91;36,-86;36,-81;36,-76;36,3;36,8;36,38;36,42;36,47;36,52;36,57;36,62;36,67;36,72;36,77;36,82;36,87;36,92;36,97;36,102;36,107;36,112;36,117;36,127;36,136;40,-123;40,-117;40,-112;40,-107;40,-102;40,-96;40,-91;40,-86;40,-81;40,-76;40,-8;40,-2;40,24;40,29;40,34;40,39;40,45;40,55;40,60;40,65;40,71;40,76;40,81;40,86;40,92;40,97;40,102;40,107;40,112;40,118;40,123;44,-119;44,-113;44,-108;44,-102;44,-97;44,-91;44,-85;44,-80;44,-74;44,4;44,20;44,26;44,42;44,54;44,59;44,65;44,70;44,76;44,81;44,87;44,92;44,98;44,104;44,109;44,115;44,120;44,126;44,131;44,143;48,-120;48,-114;48,-108;48,-102;48,-96;48,-90;48,-84;48,-78;48,-72;48,-66;48,-54;48,-1;48,5;48,11;48,17;48,23;48,29;48,35;48,41;48,47;48,53;48,59;48,65;48,71;48,77;48,83;48,89;48,95;48,101;48,107;48,113;48,119;48,125;48,131;48,137;52,-122;52,-115;52,-109;52,-102;52,-96;52,-89;52,-83;52,-76;52,-70;52,-63;52,-57;52,-5;52,8;52,15;52,21;52,28;52,34;52,41;52,47;52,54;52,60;52,67;52,73;52,80;52,86;52,93;52,99;52,106;52,112;52,119;52,125;52,132;52,138;52,158;56,-159;56,-130;56,-123;56,-116;56,-108;56,-101;56,-94;56,-73;56,-66;56,13;56,27;56,35;56,42;56,49;56,56;56,63;56,70;56,78;56,85;56,92;56,99;56,106;56,113;56,120;56,128;56,135;56,156;60,-164;60,-156;60,-140;60,-132;60,-124;60,-116;60,-108;60,-100;60,-76;60,12;60,36;60,44;60,52;60,60;60,68;60,76;60,84;60,92;60,100;60,108;60,116;60,124;60,132;60,140;60,148;60,164;64,-153;64,-144;64,-134;64,-125;64,-116;64,-107;64,-98;64,-71;64,-43;64,12;64,30;64,39;64,48;64,57;64,66;64,75;64,85;64,94;64,103;64,112;64,121;64,130;64,139;64,148;64,158;64,167;64,176;68,-180;68,-159;68,-148;68,-137;68,-127;68,-116;68,-105;68,-95;68,-84;68,-73;68,-52;68,-41;68,23;68,34;68,44;68,55;68,66;68,76;68,87;68,98;68,108;68,119;68,130;68,140;68,151;68,162;68,172;72,-123;72,-111;72,-100;72,-89;72,-77;72,-54;72,-43;72,-31;72,71;72,83;72,94;72,106;72,117;72,140;76,-100;76,-54;76,-43;76,-31;76,-20;76,60;76,94;76,106;76,140'.split(';').map(p => p.split(',').map(Number) as [number, number]);
 
-function NetworkArt() {
-  const cx = 180, cy = 75;
-  const on = (deg: number, rx: number, ry: number): [number, number] => {
-    const a = (deg * Math.PI) / 180;
-    return [+(cx + rx * Math.cos(a)).toFixed(1), +(cy + ry * Math.sin(a)).toFixed(1)];
-  };
-  const hubs = [
-    { deg: 200, label: 'Investors', anchor: 'end', dx: -9, dy: 3 },
-    { deg: 320, label: 'Pharma', anchor: 'start', dx: 9, dy: -2 },
-    { deg: 25, label: 'MedTech', anchor: 'start', dx: 9, dy: 6 },
-    { deg: 140, label: 'Acquirers', anchor: 'end', dx: -9, dy: 8 },
-  ].map(h => ({ ...h, p: on(h.deg, 132, 52) }));
-  const minor = [255, 280, 80, 105, 350, 170].map(d => on(d, 132, 52));
-  const inner = [230, 300, 50, 120].map(d => on(d, 70, 28));
-  return (
-    <svg className="apx" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <ellipse cx={cx} cy={cy} rx="132" ry="52" className="apx-faint" />
-      <ellipse cx={cx} cy={cy} rx="70" ry="28" className="apx-faint apx-dash" />
-      {hubs.map((h, i) => (
-        <g key={h.label}>
-          <path id={`net-l${i}`} d={`M${cx} ${cy} L${h.p[0]} ${h.p[1]}`} pathLength={1} className="apx-line apx-draw" style={{ ['--d' as string]: `${0.2 + i * 0.15}s` }} />
-          <circle r="2.2" className="apx-spark">
-            <animateMotion dur={`${2.6 + i * 0.4}s`} repeatCount="indefinite" begin={`${1.4 + i * 0.5}s`} path={`M${cx} ${cy} L${h.p[0]} ${h.p[1]}`} />
-          </circle>
-        </g>
-      ))}
-      {minor.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="2.2" className="apx-atom apx-pop" style={{ ['--d' as string]: `${0.5 + i * 0.06}s` }} />)}
-      {inner.map((p, i) => <circle key={`i${i}`} cx={p[0]} cy={p[1]} r="1.8" className="apx-dot apx-pop" style={{ ['--d' as string]: `${0.4 + i * 0.06}s` }} />)}
-      {hubs.map((h, i) => (
-        <g key={`h${h.label}`} className="apx-pop" style={{ ['--d' as string]: `${0.7 + i * 0.15}s` }}>
-          <circle cx={h.p[0]} cy={h.p[1]} r="4.6" className="apx-accent" />
-          <text x={h.p[0] + h.dx} y={h.p[1] + h.dy} textAnchor={h.anchor as 'start' | 'end'} className="apx-label">{h.label}</text>
-        </g>
-      ))}
-      <circle cx={cx} cy={cy} r="15" className="apx-hub-ring apx-pulse" />
-      <circle cx={cx} cy={cy} r="11" className="apx-hub" />
-      <text x={cx} y={cy + 3.6} textAnchor="middle" className="apx-hub-text">AP</text>
-    </svg>
-  );
-}
+/* Healthcare and capital hubs linked from Paris. Real coordinates: the globe projects them, so they
+   always sit on the right continent. `side` places the label (0 = dot only, too close to Paris). */
+const HUB = { name: 'Paris', lat: 48.86, lon: 2.35 };
+const CITIES = [
+  { name: 'London', lat: 51.51, lon: -0.13, side: 0 },
+  { name: 'Basel', lat: 47.56, lon: 7.59, side: 0 },
+  { name: 'Boston', lat: 42.36, lon: -71.06, side: 0 },
+  { name: 'New York', lat: 40.71, lon: -74.01, side: 2 },
+  { name: 'San Francisco', lat: 37.77, lon: -122.42, side: -1 },
+  { name: 'Tokyo', lat: 35.68, lon: 139.69, side: 1 },
+  { name: 'Hong Kong', lat: 22.32, lon: 114.17, side: 1 },
+  { name: 'Dubai', lat: 25.2, lon: 55.27, side: 1 },
+  { name: 'São Paulo', lat: -23.55, lon: -46.63, side: -1 },
+];
 
-function ExecutionArt() {
-  const steps = ['Mandate', 'Preparation', 'Outreach', 'Due diligence', 'Closing'];
-  const x0 = 34, x1 = 326, y = 92;
-  const xs = steps.map((_, i) => x0 + ((x1 - x0) * i) / (steps.length - 1));
-  return (
-    <svg className="apx" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      {/* rising value line above the timeline */}
-      <path d={`M${x0} 72 C 120 70, 170 64, 220 54 S 300 38, ${x1} 32`} pathLength={1} className="apx-line apx-thin apx-draw" style={{ ['--d' as string]: '0.2s', ['--t' as string]: '1.6s' }} />
-      <path d={`M${x0} 72 C 120 70, 170 64, 220 54 S 300 38, ${x1} 32 L ${x1} 72 L ${x0} 72 Z`} className="apx-area apx-pop" style={{ ['--d' as string]: '1.2s' }} />
-      <line x1={x0} y1={y} x2={x1} y2={y} className="apx-track" />
-      <line x1={x0} y1={y} x2={x1} y2={y} pathLength={1} className="apx-line apx-progress apx-draw" style={{ ['--d' as string]: '0.3s', ['--t' as string]: '1.8s' }} />
-      {xs.map((x, i) => {
-        const last = i === steps.length - 1;
-        return (
-          <g key={steps[i]} className="apx-pop" style={{ ['--d' as string]: `${0.35 + i * 0.4}s` }}>
-            <circle cx={x} cy={y} r={last ? 9 : 5.5} className={last ? 'apx-accent apx-pulse' : 'apx-step'} />
-            {last && <path d={`M${x - 3.6} ${y + 0.2} l2.6 2.6 l4.8 -5.2`} className="apx-check" />}
-            <text x={x} y={y + 24} textAnchor="middle" className="apx-label">{steps[i]}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
+const NAVY = '3,10,36', BLUE = '42,92,184', SLATE = '91,107,138', FAINT = '213,221,233';
+const rgba = (c: string, a: number) => `rgba(${c},${Math.max(0, Math.min(1, a)).toFixed(3)})`;
+const D2R = Math.PI / 180;
+
+function ApproachAnim({ type }: { type: 'dna' | 'globe' | 'execution' }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let W = 0, H = 0, raf = 0, visible = false, start = 0;
+    /* canvas cannot read CSS variables: take the page's resolved font stack instead */
+    const SANS = getComputedStyle(document.body).fontFamily || 'sans-serif';
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      W = canvas.offsetWidth; H = canvas.offsetHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    /* ── DNA: two strands turning around a horizontal axis ── */
+    const drawDna = (t: number) => {
+      const x0 = 26, x1 = W - 26, cy = H / 2, A = H * 0.27;
+      const k = (Math.PI * 4) / (x1 - x0), w = t * 0.9;
+      const rungs = Math.round((x1 - x0) / 13);
+      for (let i = 0; i <= rungs; i++) {
+        const x = x0 + ((x1 - x0) * i) / rungs, ph = k * (x - x0) + w;
+        const ya = cy + A * Math.sin(ph), yb = cy - A * Math.sin(ph);
+        ctx.strokeStyle = rgba(FAINT, 0.55 + 0.45 * Math.abs(Math.cos(ph)));
+        ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.moveTo(x, ya); ctx.lineTo(x, yb); ctx.stroke();
+      }
+      for (const off of [0, Math.PI]) {
+        for (let x = x0; x < x1; x += 2) {
+          const ph = k * (x - x0) + w + off, ph2 = k * (x + 2 - x0) + w + off;
+          const depth = (Math.cos(ph) + 1) / 2; // 1 = front
+          ctx.strokeStyle = off === 0 ? rgba(NAVY, 0.25 + 0.75 * depth) : rgba(SLATE, 0.2 + 0.7 * depth);
+          ctx.lineWidth = 0.8 + 1.1 * depth;
+          ctx.beginPath(); ctx.moveTo(x, cy + A * Math.sin(ph)); ctx.lineTo(x + 2, cy + A * Math.sin(ph2)); ctx.stroke();
+        }
+      }
+      for (let i = 0; i <= rungs; i += 3) {
+        const x = x0 + ((x1 - x0) * i) / rungs, ph = k * (x - x0) + w;
+        for (const off of [0, Math.PI]) {
+          const depth = (Math.cos(ph + off) + 1) / 2;
+          if (depth < 0.55) continue;
+          ctx.fillStyle = i % 2 ? rgba(BLUE, depth) : rgba(NAVY, depth);
+          ctx.beginPath(); ctx.arc(x, cy + A * Math.sin(ph + off), 1.6 + 1.8 * depth, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    };
+
+    /* ── Globe: orthographic projection, centre swinging between the Americas and Asia ── */
+    const drawGlobe = (t: number) => {
+      const R = Math.min(H * 0.46, W * 0.26), cx = W / 2, cy = H / 2 + 2;
+      const lam0 = (-15 + 75 * Math.sin((t * Math.PI * 2) / 28)) * D2R, phi0 = 38 * D2R;
+      const sp0 = Math.sin(phi0), cp0 = Math.cos(phi0);
+      const proj = (lat: number, lon: number, lift = 1) => {
+        const p = lat * D2R, l = lon * D2R - lam0, cp = Math.cos(p), spp = Math.sin(p);
+        const cosc = sp0 * spp + cp0 * cp * Math.cos(l);
+        return { x: cx + R * lift * cp * Math.sin(l), y: cy - R * lift * (cp0 * spp - sp0 * cp * Math.cos(l)), z: cosc };
+      };
+      // sphere
+      const g = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R);
+      g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(1, rgba(FAINT, 0.35));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+      // graticule
+      ctx.strokeStyle = rgba(FAINT, 0.9); ctx.lineWidth = 0.7;
+      const line = (pts: { x: number; y: number; z: number }[]) => {
+        ctx.beginPath(); let pen = false;
+        for (const q of pts) { if (q.z > 0) { if (pen) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); pen = true; } else pen = false; }
+        ctx.stroke();
+      };
+      for (let lon = -180; lon < 180; lon += 30) line(Array.from({ length: 37 }, (_, i) => proj(-90 + i * 5, lon)));
+      for (let lat = -60; lat <= 60; lat += 30) line(Array.from({ length: 73 }, (_, i) => proj(lat, -180 + i * 5)));
+      // land
+      for (const [lat, lon] of LAND) {
+        const q = proj(lat, lon);
+        if (q.z <= 0) continue;
+        ctx.fillStyle = rgba(SLATE, 0.18 + 0.55 * q.z);
+        ctx.beginPath(); ctx.arc(q.x, q.y, 0.75 + 0.55 * q.z, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = rgba(NAVY, 0.85); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+      // arcs from Paris (great circle, lifted above the surface)
+      const hub = proj(HUB.lat, HUB.lon);
+      const v = (lat: number, lon: number) => [Math.cos(lat * D2R) * Math.cos(lon * D2R), Math.cos(lat * D2R) * Math.sin(lon * D2R), Math.sin(lat * D2R)];
+      const a0 = v(HUB.lat, HUB.lon);
+      CITIES.forEach((c, i) => {
+        const a1 = v(c.lat, c.lon);
+        const om = Math.acos(a0[0] * a1[0] + a0[1] * a1[1] + a0[2] * a1[2]);
+        const N = 48, pts: { x: number; y: number; z: number }[] = [];
+        for (let j = 0; j <= N; j++) {
+          const f = j / N, s1 = Math.sin((1 - f) * om) / Math.sin(om), s2 = Math.sin(f * om) / Math.sin(om);
+          const x = s1 * a0[0] + s2 * a1[0], y = s1 * a0[1] + s2 * a1[1], z = s1 * a0[2] + s2 * a1[2];
+          const lat = Math.asin(z) / D2R, lon = Math.atan2(y, x) / D2R;
+          pts.push(proj(lat, lon, 1 + (0.05 + Math.min(0.13, om * 0.12)) * Math.sin(Math.PI * f)));
+        }
+        const end = proj(c.lat, c.lon);
+        const vis = Math.min(hub.z, end.z);
+        if (vis > -0.05) {
+          ctx.setLineDash([3, 3]); ctx.lineDashOffset = -t * 14;
+          ctx.strokeStyle = rgba(BLUE, 0.35 + 0.6 * Math.max(0, vis)); ctx.lineWidth = 1.3;
+          ctx.beginPath(); let pen = false;
+          for (const q of pts) { if (q.z > 0) { if (pen) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); pen = true; } else pen = false; }
+          ctx.stroke(); ctx.setLineDash([]);
+          // travelling pulse
+          const f = (t * 0.32 + i * 0.19) % 1, q = pts[Math.round(f * N)];
+          if (q.z > 0) { ctx.fillStyle = rgba(BLUE, 0.9 * Math.max(0, vis)); ctx.beginPath(); ctx.arc(q.x, q.y, 1.8, 0, Math.PI * 2); ctx.fill(); }
+        }
+        if (end.z > 0) {
+          ctx.fillStyle = rgba(BLUE, 0.35 + 0.65 * end.z);
+          ctx.beginPath(); ctx.arc(end.x, end.y, 2.6, 0, Math.PI * 2); ctx.fill();
+          if (c.side !== 0 && end.z > 0.18) {
+            ctx.font = `500 9px ${SANS}`;
+            ctx.fillStyle = rgba('95,95,95', Math.min(1, (end.z - 0.18) * 3));
+            /* side: -1 label on the left, 1 on the right, 2 underneath (New York, which sits close to Paris) */
+            ctx.textAlign = c.side === 2 ? 'center' : c.side > 0 ? 'left' : 'right';
+            if (c.side === 2) ctx.fillText(c.name, end.x, end.y + 13);
+            else ctx.fillText(c.name, end.x + c.side * 6, end.y + 3);
+          }
+        }
+      });
+      if (hub.z > 0) {
+        ctx.fillStyle = rgba(BLUE, 0.18); ctx.beginPath(); ctx.arc(hub.x, hub.y, 6 + 2 * Math.sin(t * 2.4), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = rgba(NAVY, 1); ctx.beginPath(); ctx.arc(hub.x, hub.y, 3.6, 0, Math.PI * 2); ctx.fill();
+        ctx.font = `600 9px ${SANS}`; ctx.fillStyle = rgba(NAVY, Math.min(1, hub.z * 3)); ctx.textAlign = 'center';
+        ctx.fillText('Paris', hub.x, hub.y - 9);
+      }
+    };
+
+    /* ── Execution: a mandate running to completion. The arc sweeps round, each milestone lights up as
+       it is passed, a check closes the cycle, then it starts again. ── */
+    const ease = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+    const MILESTONES = ['Mandate', 'Preparation', 'Outreach', 'Due diligence', 'Closing'], CYCLE = 7.5;
+    const drawExecution = (t: number) => {
+      const cx = W / 2, cy = H / 2 + 6, R = Math.min(H * 0.31, W * 0.17);
+      const tc = t % CYCLE, p = ease(tc / 4.2), fade = tc > 6.6 ? 1 - (tc - 6.6) / 0.9 : 1;
+      const a0 = -Math.PI / 2;
+      // track + progress
+      ctx.strokeStyle = rgba(FAINT, 1); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = rgba(NAVY, 0.9 * fade); ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(cx, cy, R, a0, a0 + Math.PI * 2 * p); ctx.stroke(); ctx.lineCap = 'butt';
+      // milestones
+      ctx.font = `500 9px ${SANS}`; ctx.textBaseline = 'middle';
+      for (let i = 0; i < MILESTONES.length; i++) {
+        const f = i / MILESTONES.length, a = a0 + Math.PI * 2 * f, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+        const lit = p >= f - 0.001, since = (p - f) * 4.2;
+        if (lit && since < 0.8) { ctx.fillStyle = rgba(BLUE, 0.25 * (1 - since / 0.8) * fade); ctx.beginPath(); ctx.arc(x, y, 5 + 10 * since, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = lit ? rgba(BLUE, fade) : '#fff';
+        ctx.strokeStyle = lit ? rgba(BLUE, fade) : rgba(SLATE, 0.8); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        const lx = cx + (R + 12) * Math.cos(a), ly = cy + (R + 12) * Math.sin(a);
+        ctx.textAlign = Math.abs(Math.cos(a)) < 0.2 ? 'center' : Math.cos(a) > 0 ? 'left' : 'right';
+        ctx.fillStyle = lit ? rgba(NAVY, 0.55 + 0.45 * fade) : rgba('95,95,95', 0.7);
+        ctx.fillText(MILESTONES[i], lx, Math.abs(Math.cos(a)) < 0.2 ? ly - 4 : ly);
+      }
+      ctx.textBaseline = 'alphabetic';
+      // centre: check once the cycle closes
+      const c = ease((tc - 4.3) / 0.5) * fade;
+      ctx.fillStyle = rgba(NAVY, c); ctx.beginPath(); ctx.arc(cx, cy, R * 0.42 * (0.7 + 0.3 * c), 0, Math.PI * 2); ctx.fill();
+      if (c > 0.05) {
+        const k = R * 0.16;
+        ctx.strokeStyle = rgba('255,255,255', c); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(cx - k, cy); ctx.lineTo(cx - k * 0.3, cy + k * 0.7); ctx.lineTo(cx + k * 1.05, cy - k * 0.75); ctx.stroke();
+        ctx.lineCap = 'butt';
+      }
+    };
+
+    const draw = (t: number) => {
+      ctx.clearRect(0, 0, W, H);
+      if (type === 'dna') drawDna(t); else if (type === 'globe') drawGlobe(t); else drawExecution(t);
+    };
+    const loop = (now: number) => {
+      if (!start) start = now;
+      draw((now - start) / 1000);
+      if (visible) raf = requestAnimationFrame(loop);
+    };
+
+    resize();
+    const ro = new ResizeObserver(() => { resize(); if (still) draw(8); });
+    ro.observe(canvas);
+    const io = new IntersectionObserver(([e]) => {
+      if (still) { draw(8); return; }
+      if (e.isIntersecting && !visible) { visible = true; raf = requestAnimationFrame(loop); }
+      else if (!e.isIntersecting) { visible = false; cancelAnimationFrame(raf); }
+    }, { threshold: 0.15 });
+    io.observe(canvas);
+    return () => { cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
+  }, [type]);
+
+  return <canvas ref={ref} className="approach-anim" aria-hidden="true" />;
 }
 
 /* ─── Expertise Section ─── */
@@ -155,7 +246,7 @@ const DOMAINS = [
 function ExpertiseSection() {
   const [hovered, setHovered] = useState<number | null>(null);
   return (
-    <section id="domains" style={{ background: 'var(--accent-bg)', padding: '4.5rem 2.5vw' }}>
+    <section id="domains" style={{ background: 'var(--accent-bg)', padding: '4.5rem 2.5vw 3rem' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What we cover</span>
@@ -184,6 +275,18 @@ function ExpertiseSection() {
           })}
         </div>
       </div>
+        {/* Sectors, right under the photos and on the same light background */}
+        <div className="sector-ticker">
+          <div className="sector-ticker-track">
+            {[...Array(2)].map((_, copy) => (
+              <div key={copy} className="sector-ticker-set" aria-hidden={copy > 0}>
+                {['Oncology','Rare Diseases','Immunology','Neuroscience','Gene Therapy','Cell Therapy','Biologics','Biosimilars','Specialty Pharma','Generics','Vaccines','Radiopharma','Robotics','Diagnostics','AI Health','Digital Therapeutics','CRO','CDMO','OTC'].map((s, i) => (
+                  <span key={i} className="sector-ticker-item">{s}</span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
     </section>
   );
 }
@@ -199,7 +302,7 @@ const SERVICES = [
 
 function ServicesSection() {
   return (
-    <section id="services" style={{ background: 'var(--white)', padding: '4.5rem 2.5vw' }}>
+    <section id="services" style={{ background: 'var(--accent-bg)', padding: '4.5rem 2.5vw' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
           <span className="eyebrow">What we do</span>
@@ -502,7 +605,7 @@ export default function AmbroisePartnersModern() {
     if (!navOuter || !hero) return;
 
     const onScroll = () => {
-      navOuter.classList.toggle('nav-scrolled', window.scrollY > hero.offsetHeight - 80);
+      navOuter.classList.toggle('nav-scrolled', window.scrollY > stickyPx() * 0.7 + hero.offsetHeight - 80);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -533,9 +636,9 @@ export default function AmbroisePartnersModern() {
       hero.style.height = `${h}px`;
       hero.style.minHeight = `${h}px`;
       wrapper.style.height = `${h + STICKY_PX}px`;
-      /* The next section slides up over the pinned hero from the first pixel of scroll, instead of
-         the hero playing out first and a blank screen scrolling by after it. */
-      wrapper.style.marginBottom = `-${STICKY_PX}px`;
+      /* The DNA disperses over the first 70% of the pinned scroll, then the next section slides up
+         over the hero: the animation stays visible, with no blank screen scrolling by after it. */
+      wrapper.style.marginBottom = `-${Math.round(STICKY_PX * 0.3)}px`;
     };
 
     const wrapper = document.createElement('div');
@@ -672,10 +775,13 @@ export default function AmbroisePartnersModern() {
         ctx.fill();
       }
       if (fadeEl) {
-        /* The hero no longer fades to white: the next section slides over it (see wrapper margin).
-           The headline, buttons and figures only dim slightly, so the hero stays readable while covered. */
-        fadeEl.style.opacity = '0';
-        const contentOpacity = String(1 - scrollProgress * 0.45);
+        /* The DNA disperses while the hero glows from navy to blue to white; by the time the next
+           section slides up (70% of the pinned scroll, see wrapper margin), the bottom of the hero is
+           white and the two meet without a seam. */
+        const fadeOpacity = Math.min(Math.max((scrollProgress - 0.1) / 0.55, 0), 1);
+        fadeEl.style.opacity = String(fadeOpacity);
+        /* Fade the headline, buttons and figures out before the background turns light */
+        const contentOpacity = String(Math.max(0, 1 - fadeOpacity * 1.6));
         if (heroContent) heroContent.style.opacity = contentOpacity;
         if (heroStats) heroStats.style.opacity = contentOpacity;
       }
@@ -826,26 +932,22 @@ export default function AmbroisePartnersModern() {
           background:radial-gradient(ellipse 80% 60% at 50% 40%, #05122e 0%, #020a1e 50%, #010510 100%);
         }
         #hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;}
+        /* Muted navy → slate → the light background of the next section (a saturated blue looked loud) */
         #hero-fade{
           position:absolute;inset:0;z-index:1;pointer-events:none;
           background:linear-gradient(to top,
-            #ffffff 0%,
-            #fcfdff 1%,
-            #f8faff 2%,
-            #f0f4ff 4%,
-            #e0eaff 6%,
-            #d0e0ff 8%,
-            #b8d2f5 11%,
-            #a0c2f0 14%,
-            #7aacec 18%,
-            #5a90d8 22%,
-            #3e74c8 25%,
-            #2a5cb8 28%,
-            #1e48a0 32%,
-            #143690 36%,
-            #0a1880 42%,
-            #071260 48%,
-            #050e42 53%,
+            #f7fbfe 0%,
+            #eef2f8 3%,
+            #dde4ef 7%,
+            #c6d0e0 11%,
+            #a6b3ca 16%,
+            #8292b0 21%,
+            #627497 26%,
+            #485a7e 31%,
+            #334566 36%,
+            #213252 42%,
+            #142240 48%,
+            #0a1530 53%,
             #030a24 58%,
             rgba(3,10,36,0.85) 62%,
             rgba(3,10,36,0.7) 65%,
@@ -914,7 +1016,10 @@ export default function AmbroisePartnersModern() {
         .hero-stat-label{font-size:.8rem;color:rgba(255,255,255,.62);line-height:1.4;}
         .hero-stats-note{max-width:1200px;margin:.9rem auto 0;font-size:.68rem;color:rgba(255,255,255,.4);}
         .figures{display:none;}
-        .figures,#services{position:relative;z-index:3;box-shadow:0 -18px 40px rgba(1,5,16,.18);}
+        .figures,#services{position:relative;z-index:3;}
+        /* soft edge where the section slides over the hero's glow */
+        .figures::before,#services::before{content:'';position:absolute;left:0;right:0;top:-160px;height:160px;pointer-events:none;background:linear-gradient(to bottom,rgba(247,251,254,0),#f7fbfe);}
+        .figures::before{background:linear-gradient(to bottom,rgba(255,255,255,0),#fff);}
         .figures{background:var(--white);border-bottom:1px solid var(--line);padding:3.2rem 2.5vw 2rem;}
         .figures-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5rem;}
         .figure{display:flex;flex-direction:column;gap:.35rem;padding-left:1.2rem;border-left:1px solid var(--line);}
@@ -955,43 +1060,15 @@ export default function AmbroisePartnersModern() {
 
         /* ── APPROACH ── */
         .approach-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2.4rem;}
-        .approach-panel{display:flex;flex-direction:column;background:var(--accent-bg);}
+        .approach-panel{display:flex;flex-direction:column;background:transparent;}
         .approach-panel+.approach-panel .approach-text{border-top:none;}
         .approach-text{padding:1.2rem 0 0;display:flex;flex-direction:column;justify-content:center;border-right:none;}
         .approach-num{font-family:var(--serif);font-style:italic;font-size:1.1rem;color:#162d50;margin-bottom:.8rem;display:block;}
         .approach-title{font-family:var(--serif);font-weight:400;font-size:1.3rem;letter-spacing:-.01em;margin-bottom:.7rem;line-height:1.15;}
         .approach-desc{color:var(--muted);font-size:.98rem;line-height:1.65;font-weight:300;}
-        .approach-canvas-wrap{order:-1;background:var(--accent-bg);overflow:hidden;position:relative;height:clamp(120px,15vh,160px);border-bottom:1px solid var(--line);}
+        .approach-canvas-wrap{order:-1;background:transparent;overflow:hidden;position:relative;height:clamp(120px,15vh,160px);border-bottom:1px solid var(--line);}
 
-        /* Approach illustrations */
-        .apx{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
-        .apx-line{fill:none;stroke:var(--navy);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;}
-        .apx-thin{stroke-width:.9;stroke:#5b6b8a;}
-        .apx-faint{fill:none;stroke:#d5dde9;stroke-width:1;}
-        .apx-dash{stroke-dasharray:2 4;}
-        .apx-track{stroke:#d5dde9;stroke-width:2;stroke-linecap:round;}
-        .apx-progress{stroke-width:2;}
-        .apx-area{fill:rgba(42,92,184,.07);stroke:none;}
-        .apx-atom{fill:#fff;stroke:var(--navy);stroke-width:1.2;}
-        .apx-dot{fill:#9aa8c0;}
-        .apx-step{fill:#fff;stroke:var(--navy);stroke-width:1.4;}
-        .apx-accent{fill:var(--blue);}
-        .apx-spark{fill:var(--blue);opacity:.85;}
-        .apx-check{fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-        .apx-hub{fill:var(--navy);}
-        .apx-hub-ring{fill:none;stroke:var(--blue);stroke-width:1;opacity:.5;}
-        .apx-hub-text{font-family:var(--serif);font-size:9.5px;fill:#fff;letter-spacing:.02em;}
-        .apx-label{font-family:var(--sans);font-size:9.5px;fill:#5f5f5f;letter-spacing:.01em;}
-        .apx-chem{font-family:var(--serif);font-style:italic;font-size:11px;fill:var(--blue);}
-        .apx-draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset var(--t,.9s) var(--ease) var(--d,0s);}
-        .apx-pop{opacity:0;transform:scale(.4);transform-box:fill-box;transform-origin:center;transition:opacity .5s ease var(--d,0s),transform .5s var(--ease) var(--d,0s);}
-        .visible .apx-draw{stroke-dashoffset:0;}
-        .visible .apx-pop{opacity:1;transform:none;}
-        .visible .apx-float{animation:apxFloat 7s ease-in-out 2s infinite;}
-        .visible .apx-pulse{animation:apxPulse 2.8s ease-in-out 2s infinite;}
-        @keyframes apxFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-        @keyframes apxPulse{0%,100%{opacity:1;}50%{opacity:.55;}}
-        @media (prefers-reduced-motion:reduce){.apx-draw{stroke-dashoffset:0;transition:none;}.apx-pop{opacity:1;transform:none;transition:none;}.apx-float,.apx-pulse{animation:none!important;}.apx-spark{display:none;}}
+        .approach-anim{position:absolute;inset:0;width:100%;height:100%;display:block;}
 
         /* ── VALUES ── */
         .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#fff;}
@@ -1050,7 +1127,7 @@ export default function AmbroisePartnersModern() {
         @keyframes svcFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 
         /* ── SECTOR TICKER ── */
-        .sector-ticker{background:var(--white);border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;padding:.5rem 0;margin-top:3rem;margin-bottom:5rem;white-space:nowrap;}
+        .sector-ticker{background:transparent;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;padding:.6rem 0;margin:1.6rem -2.5vw 0;white-space:nowrap;}
         .sector-ticker-track{display:flex;width:max-content;animation:tickerScroll 180s linear infinite;}
         .sector-ticker-set{display:flex;gap:0;flex-shrink:0;}
         .sector-ticker-item{font-size:.78rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);padding:0 2.8rem;opacity:1;display:flex;align-items:center;gap:.7rem;}
@@ -1203,7 +1280,7 @@ export default function AmbroisePartnersModern() {
           .svc-panel-anim{padding:32px 0!important;gap:28px!important;}
 
           /* Ticker */
-          .sector-ticker{margin-top:2rem!important;}
+          .sector-ticker{margin:1.2rem -4vw 0!important;}
 
           /* Approach */
           .approach-text{padding:1rem 0 0;}
@@ -1350,7 +1427,7 @@ export default function AmbroisePartnersModern() {
       <ServicesSection />
 
       {/* APPROACH */}
-      <div style={{ background: 'var(--accent-bg)', width: '100%' }}>
+      <div style={{ background: 'var(--white)', width: '100%' }}>
       <section style={{ padding: '4.5rem 2.5vw' }} id="approach">
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div className="section-head reveal">
@@ -1364,21 +1441,21 @@ export default function AmbroisePartnersModern() {
               <div className="approach-title">Scientific &amp; Technical Expertise</div>
               <p className="approach-desc">Advanced medical and scientific training enables the rigorous assessment of complex technologies and the crafting of clear, differentiated equity stories that resonate with specialist investors and strategic partners.</p>
             </div>
-            <div className="approach-canvas-wrap"><ScienceArt /></div>
+            <div className="approach-canvas-wrap"><ApproachAnim type="dna" /></div>
           </div>
           <div className="approach-panel reveal reveal-d1">
             <div className="approach-text">
               <div className="approach-title">Targeted Global Network</div>
               <p className="approach-desc">A curated global network of leading healthcare-focused investors, pharma and medtech corporates, and strategic acquirers worldwide. Developed through years of active involvement in the sector, it provides direct access to the right counterparties and ensures focused, relevant engagement.</p>
             </div>
-            <div className="approach-canvas-wrap"><NetworkArt /></div>
+            <div className="approach-canvas-wrap"><ApproachAnim type="globe" /></div>
           </div>
           <div className="approach-panel reveal reveal-d2">
             <div className="approach-text">
               <div className="approach-title">Execution Excellence</div>
               <p className="approach-desc">The rigour and standards developed over decades within top-tier investment banks, combined with the flexibility and hands-on dedication. Every process is conducted with discipline, discretion and a strong focus on outcomes.</p>
             </div>
-            <div className="approach-canvas-wrap"><ExecutionArt /></div>
+            <div className="approach-canvas-wrap"><ApproachAnim type="execution" /></div>
           </div>
         </div>
       </div>
@@ -1386,19 +1463,6 @@ export default function AmbroisePartnersModern() {
       </div>
 
       <ExpertiseSection />
-
-      {/* SECTOR TICKER */}
-      <div className="sector-ticker">
-        <div className="sector-ticker-track">
-          {[...Array(2)].map((_, copy) => (
-            <div key={copy} className="sector-ticker-set" aria-hidden={copy > 0}>
-              {['Oncology','Rare Diseases','Immunology','Neuroscience','Gene Therapy','Cell Therapy','Biologics','Biosimilars','Specialty Pharma','Generics','Vaccines','Radiopharma','Robotics','Diagnostics','AI Health','Digital Therapeutics','CRO','CDMO','OTC'].map((s, i) => (
-                <span key={i} className="sector-ticker-item">{s}</span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* METHOD */}
       <div style={{ background: 'var(--white)', width: '100%' }}>
