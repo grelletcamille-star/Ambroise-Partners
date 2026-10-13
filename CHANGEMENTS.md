@@ -4,10 +4,8 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 
 ## Ce qui change
 
-- **Équipe** : nouvelle section *Team* (Camille Grellet, Thomas Guillot), avec les bios tirées de l'Overview et de la proposition MSInsight.
-- **Preuves** :
-  - un bandeau de chiffres sous le hero ($90bn+, 15+ ans, 100+ sociétés, Paris · London) ;
-  - une section *Selected experience* (24 sociétés), avec la mention « including in previous roles ».
+- **Équipe** : nouvelle section *Team* (Camille Grellet, Thomas Guillot), avec les bios tirées de l'Overview et de la proposition MSInsight. Placée en bas de page, juste avant le formulaire de contact.
+- **Chiffres clés** : un bandeau sous le hero ($90bn+, 15+ ans, 100+ sociétés, Paris · London).
 - **Hero** :
   - l'animation ADN est plus courte (700 px de défilement au lieu de 1 500) ;
   - deux boutons ont été ajoutés (*Discuss your project*, *Our services*) ;
