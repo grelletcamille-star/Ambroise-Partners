@@ -6,7 +6,7 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 
 - **Équipe** : nouvelle section *Team* (Camille Grellet, Thomas Guillot), avec les bios tirées de l'Overview et de la proposition MSInsight.
 - **Preuves** :
-  - un bandeau de chiffres sous le hero (€90bn+, 15+ ans, 100+ sociétés, Paris · London) ;
+  - un bandeau de chiffres sous le hero ($90bn+, 15+ ans, 100+ sociétés, Paris · London) ;
   - une section *Selected experience* (24 sociétés), avec la mention « including in previous roles ».
 - **Hero** :
   - l'animation ADN est plus courte (700 px de défilement au lieu de 1 500) ;
@@ -21,9 +21,6 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
   - « Healthcare-focused » avec un trait d'union ;
   - langue déclarée `en_GB` ;
   - meta keywords supprimée.
-- **Insights** :
-  - nouvelle rubrique (`/insights`) avec 3 articles et un aperçu sur l'accueil ;
-  - pour ajouter un article, éditer `app/insights/posts.ts`.
 - **Mentions légales** : données Pappers (EURL au capital de 1 000 €, 7 rue Paul Saunière 75016 Paris, RCS Paris 981 652 373, TVA FR77981652373, directrice de publication Camille Grellet). La politique de confidentialité a été complétée de la même façon.
 - **Logo** : nouveau monogramme AP dessiné (piste A avec le P), dans la navigation, le footer, les pages secondaires, la favicon, l'icône Apple et l'image de partage. Le dessin est dans `app/components/LogoMark.tsx`.
 - **LinkedIn** : liens vers les profils de Camille et Thomas et vers la page entreprise (footer, pages secondaires, données structurées).
@@ -34,10 +31,8 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 
 ## À faire avant la mise en ligne
 
-1. **Relire les 3 articles Insights.** Ils sont rédigés en votre nom, sans chiffres ni clients, mais à valider.
-2. **Vérifier la devise des 90bn** (€ ou $), dans `app/page.tsx`, constante `FIGURES`.
-3. **Photos de l'équipe** : déposer `camille.jpg` et `thomas.jpg` (carrées, au moins 600×600) dans `public/team/`, puis renseigner `photo: '/team/camille.jpg'` dans `TEAM` (`app/page.tsx`).
-4. **Statut réglementaire** (CIF/ORIAS, FCA) : à ajouter dans les mentions légales si applicable.
+1. **Photos de l'équipe** : déposer `camille.jpg` et `thomas.jpg` (carrées, au moins 600×600) dans `public/team/`, puis renseigner `photo: '/team/camille.jpg'` dans `TEAM` (`app/page.tsx`).
+2. **Statut réglementaire** (CIF/ORIAS, FCA) : à ajouter dans les mentions légales si applicable.
 
 ## Mettre en ligne
 

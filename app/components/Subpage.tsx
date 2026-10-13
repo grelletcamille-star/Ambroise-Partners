@@ -20,7 +20,6 @@ export function SubpageNav() {
         <nav className="sp-links" aria-label="Main">
           <Link href="/#services">Services</Link>
           <Link href="/#team">Team</Link>
-          <Link href="/insights">Insights</Link>
           <Link href="/#contact" className="sp-cta">Contact us</Link>
         </nav>
       </div>
@@ -34,7 +33,6 @@ export function SubpageFooter() {
       <div className="sp-footer-inner">
         <Link href="/" aria-label="Ambroise Partners home"><Wordmark /></Link>
         <nav className="sp-footer-links" aria-label="Footer">
-          <Link href="/insights">Insights</Link>
           <Link href="/legal">Legal notice</Link>
           <Link href="/privacy">Privacy policy</Link>
           <Link href="/cookies">Cookie policy</Link>

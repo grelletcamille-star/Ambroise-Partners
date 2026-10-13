@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { POSTS, formatDate } from './insights/posts';
 import { COMPANY } from './lib/company';
 import LogoMark from './components/LogoMark';
 
@@ -263,7 +262,7 @@ function ServicesSection() {
 
 /* ─── Key figures (shown under the hero) ─── */
 const FIGURES = [
-  { value: '€90bn+', label: 'transaction value advised' },
+  { value: '$90bn+', label: 'transaction value advised' },
   { value: '15+', label: 'years in healthcare investment banking' },
   { value: '100+', label: 'healthcare companies advised' },
   { value: 'Paris · London', label: 'offices', small: true },
@@ -358,38 +357,6 @@ function TeamSection() {
         </div>
       </div>
     </section>
-  );
-}
-
-/* ─── Insights teaser ─── */
-function InsightsSection() {
-  return (
-    <div style={{ background: 'var(--accent-bg)', width: '100%' }}>
-      <section id="insights" style={{ padding: '5rem 2.5vw' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-          <div className="section-head reveal ins-head">
-            <div>
-              <span className="eyebrow">Insights</span>
-              <h2 className="section-title">Perspectives from the team</h2>
-            </div>
-            <Link href="/insights" className="btn-outline">All insights</Link>
-          </div>
-          <div className="ins-grid reveal">
-            {POSTS.slice(0, 3).map(p => (
-              <Link key={p.slug} href={`/insights/${p.slug}`} className="ins-card">
-                <span className="ins-meta">{p.category}</span>
-                <span className="ins-title">{p.title}</span>
-                <span className="ins-excerpt">{p.excerpt}</span>
-                <span className="ins-foot">
-                  <span>{formatDate(p.date)}</span>
-                  <span className="ins-read">Read →</span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
   );
 }
 
@@ -1030,9 +997,6 @@ export default function AmbroisePartnersModern() {
         .exp-list{list-style:none;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);}
         .exp-list li{font-family:var(--serif);font-size:1.02rem;color:var(--navy);padding:1.1rem .9rem;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;min-height:72px;line-height:1.25;}
 
-        /* ── INSIGHTS TEASER ── */
-        .ins-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;}
-
         /* ── SECTIONS ── */
         .section{max-width:1200px;margin:0 auto;padding:7rem 2.5vw;color:var(--ink);}
         .section-bg{background:var(--white);}
@@ -1255,7 +1219,7 @@ export default function AmbroisePartnersModern() {
           .member-bio{font-size:.92rem;}
           .exp-list{grid-template-columns:repeat(2,minmax(0,1fr));}
           .exp-list li{font-size:.92rem;min-height:56px;padding:.8rem .6rem;}
-          #team,#insights,#services{padding:3rem 4vw!important;}
+          #team,#services{padding:3rem 4vw!important;}
 
           /* Services */
           .svc-tabs{flex-direction:column;gap:0;border-bottom:none;margin-top:1.5rem!important;overflow:visible;}
@@ -1379,7 +1343,6 @@ export default function AmbroisePartnersModern() {
             <a href="#approach">Approach</a>
             <a href="#team">Team</a>
             <a href="#domains">Expertise</a>
-            <Link href="/insights">Insights</Link>
             <a href="#contact" className="nav-cta">Contact us</a>
           </div>
         </nav>
@@ -1493,8 +1456,6 @@ export default function AmbroisePartnersModern() {
       </section>
       </div>
 
-      <InsightsSection />
-
       {/* CONTACT */}
       <div style={{background:'var(--white)'}} id="contact">
         <div className="contact-wrap">
@@ -1551,8 +1512,7 @@ export default function AmbroisePartnersModern() {
                 <a href="#team">Team</a>
                 <a href="#domains">Expertise</a>
                 <a href="#method">Process</a>
-                <Link href="/insights">Insights</Link>
-                <a href="#contact">Contact</a>
+                    <a href="#contact">Contact</a>
               </div>
               <div className="footer-col">
                 <div className="footer-col-title">Legal</div>
