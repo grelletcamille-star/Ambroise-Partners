@@ -611,6 +611,7 @@ export default function AmbroisePartnersModern() {
     const isMobile = window.innerWidth <= 600;
     const heroContent = hero.querySelector<HTMLElement>('.hero-content');
     const PARTICLE_COUNT = isMobile ? 18000 : 40000;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let W = 0, H = 0, scrollProgress = 0, raf = 0;
 
     let fadeEl: HTMLElement | null = null;
@@ -637,78 +638,69 @@ export default function AmbroisePartnersModern() {
     fadeEl.id = 'hero-fade';
     hero.appendChild(fadeEl);
 
-    /* Typed arrays for SoA particle data — avoids per-particle objects & GC */
-    let pDnaX: Float32Array, pDnaY: Float32Array;
+    /* Typed arrays for SoA particle data — avoids per-particle objects & GC.
+       Each particle keeps its place ON the helix (frac along the spine, strand, rung position, scatter),
+       not a fixed x/y: positions are recomputed every frame so the helix turns slowly on itself. */
+    let pFrac: Float32Array, pRung: Float32Array, pGx: Float32Array, pGy: Float32Array;
+    let pStrand: Uint8Array;
     let pDispX: Float32Array, pDispY: Float32Array;
     let pSpd: Float32Array, pPh: Float32Array;
     let pSize: Float32Array, pAlpha: Float32Array;
-    let pX: Float32Array, pY: Float32Array;
-    /* Alpha buckets for batched drawing (10 buckets) */
+    /* Batched drawing: one path per (strand × alpha bucket) — 2 colours × 10 levels, 20 fills per frame */
     const ALPHA_BUCKETS = 10;
+    /* Two strands, as on the Breakline × Servier visual: white, and the ice blue of the headline */
+    const STRAND_RGB = ['255,255,255', '169,196,245'];
+
+    /* Spine of the helix. Desktop: rising from bottom-centre to top-right, behind the left-aligned
+       headline's right half (a shade keeps the text readable). Mobile: wider, behind everything. */
+    let SX0 = 0, SY0 = 0, tx = 0, ty = 0, px = 0, py = 0, spineLen = 0, ref = 0;
+    function spine() {
+      ref = isMobile ? W * 1.3 : Math.min(W, 1600);
+      SX0 = isMobile ? W * 0.10 : W * 0.40; SY0 = H * 1.12;
+      const SX1 = isMobile ? W * 1.15 : W * 1.04, SY1 = -H * 0.12;
+      const dvx = SX1 - SX0, dvy = SY1 - SY0;
+      spineLen = Math.sqrt(dvx * dvx + dvy * dvy);
+      tx = dvx / spineLen; ty = dvy / spineLen; px = -ty; py = tx;
+    }
 
     function buildParticles() {
       const N = PARTICLE_COUNT;
-      pDnaX = new Float32Array(N); pDnaY = new Float32Array(N);
+      pFrac = new Float32Array(N); pRung = new Float32Array(N);
+      pGx = new Float32Array(N); pGy = new Float32Array(N); pStrand = new Uint8Array(N);
       pDispX = new Float32Array(N); pDispY = new Float32Array(N);
       pSpd = new Float32Array(N); pPh = new Float32Array(N);
       pSize = new Float32Array(N); pAlpha = new Float32Array(N);
-      pX = new Float32Array(N); pY = new Float32Array(N);
-
-      const ref = Math.max(W, H * 0.5);
-      /* The helix runs up the right-hand side, clear of the centred headline (it used to cross it). */
-      const SX0 = W*0.66, SY0 = H*1.04;
-      const SX1 = W*1.02, SY1 = -H*0.04;
-      const dvx = SX1-SX0, dvy = SY1-SY0, spineLen = Math.sqrt(dvx*dvx+dvy*dvy);
-      const tx = dvx/spineLen, ty = dvy/spineLen;
-      const px = -ty, py = tx;
-      const TURNS = 3.5;
+      spine();
       const TWO_PI = Math.PI * 2;
 
       for (let i = 0; i < N; i++) {
         const frac = Math.random();
         const perspective = 0.35 + frac * 0.65;
-        const AMP = ref * 0.09 * perspective;
-        const sx = SX0 + tx * spineLen * frac;
-        const sy = SY0 + ty * spineLen * frac;
-        const isA = Math.random() < 0.5;
-        const angle = frac * TURNS * TWO_PI + (isA ? 0 : Math.PI);
-        const cosA = Math.cos(angle);
-        const coreX = sx + px * cosA * AMP;
-        const coreY = sy + py * cosA * AMP;
-
-        let targetX = coreX, targetY = coreY;
-        if (Math.random() < 0.10) {
-          const otherCos = Math.cos(frac * TURNS * TWO_PI + (isA ? Math.PI : 0));
-          const otherX = sx + px * otherCos * AMP;
-          const otherY = sy + py * otherCos * AMP;
-          const t2 = Math.random();
-          targetX = coreX + (otherX - coreX) * t2;
-          targetY = coreY + (otherY - coreY) * t2;
-        }
+        pFrac[i] = frac;
+        pStrand[i] = Math.random() < 0.5 ? 0 : 1;
+        /* 10 % of the dots sit on the rungs between the two strands */
+        pRung[i] = Math.random() < 0.10 ? Math.random() : -1;
 
         const u1 = Math.max(Math.random(), 1e-5);
         const mag = Math.sqrt(-2.0 * Math.log(u1));
         const scA = Math.random() * TWO_PI;
-        const sigma = Math.pow(Math.random(), 0.65) * ref * 0.018 * perspective;
-        const dnaX = targetX + Math.cos(scA) * mag * sigma;
-        const dnaY = targetY + Math.sin(scA) * mag * sigma;
+        const s = Math.pow(Math.random(), 0.65);
+        pGx[i] = Math.cos(scA) * mag * s; pGy[i] = Math.sin(scA) * mag * s;
 
-        const dist = Math.sqrt((dnaX - targetX)**2 + (dnaY - targetY)**2);
-        const coreness = 1 - Math.min(dist / (ref * 0.018), 1);
+        const coreness = 1 - Math.min(Math.hypot(pGx[i], pGy[i]), 1);
         const isBright = Math.random() < 0.07;
         const sizeScale = 0.5 + perspective * 0.5;
 
-        pDnaX[i] = dnaX; pDnaY[i] = dnaY;
         pDispX[i] = Math.random() * W; pDispY[i] = Math.random() * H;
         pSpd[i] = Math.random() * 0.10 + 0.025;
         pPh[i] = Math.random() * TWO_PI;
+        /* Larger and brighter than the first version (radius 0.05–0.4 px), which read as a faint haze */
         pSize[i] = isBright
-          ? (Math.random() * 0.9 + 0.4) * sizeScale
-          : (Math.random() * 0.35 + 0.05) * sizeScale;
+          ? (Math.random() * 0.9 + 0.5) * sizeScale
+          : (Math.random() * 0.4 + 0.25) * sizeScale;
         pAlpha[i] = isBright
-          ? Math.random() * 0.5 + 0.38
-          : Math.max(0.01, coreness * coreness * (Math.random() * 0.65 + 0.12) + Math.random() * 0.025);
-        pX[i] = dnaX; pY[i] = dnaY;
+          ? Math.random() * 0.45 + 0.5
+          : Math.max(0.02, coreness * coreness * (Math.random() * 0.6 + 0.3) + Math.random() * 0.04);
       }
     }
 
@@ -732,31 +724,42 @@ export default function AmbroisePartnersModern() {
       const N = PARTICLE_COUNT;
       const TWO_PI = Math.PI * 2;
 
-      /* Update all positions (tight numeric loop) */
+      /* Recompute every dot on the turning helix, then lerp towards its scattered position on scroll.
+         One pass: each dot goes into the path of its (strand, alpha) bucket. */
       const wobbleScale = 1.5 + eased * 2.0;
       const wobbleScaleY = 1.2 + eased * 1.8;
+      const TURNS = 3.5;
+      const spin = reduceMotion ? 0 : t * 0.12; /* ~52 s per full turn: alive, never busy */
+      const paths: Path2D[] = [];
+      for (let b = 0; b < ALPHA_BUCKETS * 2; b++) paths.push(new Path2D());
       for (let i = 0; i < N; i++) {
-        const baseX = pDnaX[i] + (pDispX[i] - pDnaX[i]) * eased;
-        const baseY = pDnaY[i] + (pDispY[i] - pDnaY[i]) * eased;
+        const f = pFrac[i];
+        const perspective = 0.35 + f * 0.65;
+        const AMP = ref * 0.09 * perspective;
+        const ang = f * TURNS * TWO_PI + spin + (pStrand[i] ? Math.PI : 0);
+        let k = Math.cos(ang), depth = Math.sin(ang);
+        const rung = pRung[i];
+        if (rung >= 0) { k = k - 2 * k * rung; depth = depth * (1 - 2 * rung); }
+        const sigma = ref * 0.018 * perspective;
+        const dnaX = SX0 + tx * spineLen * f + px * k * AMP + pGx[i] * sigma;
+        const dnaY = SY0 + ty * spineLen * f + py * k * AMP + pGy[i] * sigma;
+        const front = (depth + 1) / 2; /* the strand passing behind is dimmer and smaller: reads as 3D */
+        const baseX = dnaX + (pDispX[i] - dnaX) * eased;
+        const baseY = dnaY + (pDispY[i] - dnaY) * eased;
         const phase = t * pSpd[i] + pPh[i];
-        pX[i] = baseX + Math.sin(phase) * wobbleScale;
-        pY[i] = baseY + Math.cos(phase * 0.88) * wobbleScaleY;
+        const x = baseX + Math.sin(phase) * wobbleScale;
+        const y = baseY + Math.cos(phase * 0.88) * wobbleScaleY;
+        const a = pAlpha[i] * (0.35 + 0.65 * front);
+        const d = pSize[i] * (1.4 + front * 0.9);
+        const b = Math.min(ALPHA_BUCKETS - 1, Math.floor(a * ALPHA_BUCKETS));
+        paths[pStrand[i] * ALPHA_BUCKETS + b].rect(x - d / 2, y - d / 2, d, d);
       }
 
-      /* Draw batched by alpha bucket — drastically reduces fillStyle switches */
       const alphaFade = 1 - eased * 0.3;
-      for (let b = 0; b < ALPHA_BUCKETS; b++) {
-        const lo = b / ALPHA_BUCKETS, hi = (b + 1) / ALPHA_BUCKETS;
-        const bucketAlpha = ((lo + hi) / 2) * alphaFade;
-        ctx.fillStyle = `rgba(255,255,255,${bucketAlpha.toFixed(3)})`;
-        ctx.beginPath();
-        for (let i = 0; i < N; i++) {
-          if (pAlpha[i] >= lo && pAlpha[i] < hi) {
-            ctx.moveTo(pX[i] + pSize[i], pY[i]);
-            ctx.arc(pX[i], pY[i], pSize[i], 0, TWO_PI);
-          }
-        }
-        ctx.fill();
+      for (let b = 0; b < ALPHA_BUCKETS * 2; b++) {
+        const level = ((b % ALPHA_BUCKETS) + 0.5) / ALPHA_BUCKETS * alphaFade;
+        ctx.fillStyle = `rgba(${STRAND_RGB[b < ALPHA_BUCKETS ? 0 : 1]},${level.toFixed(3)})`;
+        ctx.fill(paths[b]);
       }
       if (fadeEl) {
         /* The DNA disperses while the hero lightens from navy to slate to the next section's light
@@ -873,11 +876,13 @@ export default function AmbroisePartnersModern() {
         a{color:inherit;text-decoration:none;}
 
         /* ── NAV ── */
-        .nav-outer{position:fixed;top:0;left:0;right:0;z-index:300;pointer-events:none;}
+        /* Floating nav: a thin-bordered bar over the hero (glass on navy), white once past the hero */
+        .nav-outer{position:fixed;top:0;left:0;right:0;z-index:300;pointer-events:none;padding:14px 2.5vw 0;}
         nav{
-          pointer-events:all;width:100%;padding:0 4vw;height:64px;
+          pointer-events:all;width:100%;max-width:1240px;margin:0 auto;padding:0 .7rem 0 1.2rem;height:62px;
           display:flex;align-items:center;justify-content:space-between;
-          background:transparent;border-bottom:1px solid transparent;
+          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
           transition:background .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease);
         }
         .logo-wrap{display:flex;align-items:center;gap:.7rem;}
@@ -899,10 +904,11 @@ export default function AmbroisePartnersModern() {
           display:inline-flex;align-items:center;justify-content:center;
           font-size:var(--fs-small)!important;font-weight:500!important;
           border:1.5px solid #fff;
-          transition:background .22s!important,color .22s!important,box-shadow .22s!important,border-color .18s var(--ease),border-radius .18s var(--ease);
+          /* no !important inside a transition list: the minifier drops the whole rule (the button lost its white fill) */
+          transition:background .22s,color .22s,box-shadow .22s,border-color .18s var(--ease),border-radius .18s var(--ease);
         }
         .nav-cta:hover{background:#fff!important;color:var(--ink)!important;border-color:#fff;border-radius:9999px;}
-        .nav-scrolled nav{background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 12px rgba(0,0,0,0.06);}
+        .nav-scrolled nav{background:#fff;border-color:var(--line);box-shadow:0 6px 24px rgba(3,10,36,0.07);}
         .nav-scrolled .logo-ap{color:var(--ink);}
         .nav-scrolled .logo-sep{background:var(--line);}
         .nav-scrolled .nav-links a{color:var(--muted);}
@@ -911,10 +917,11 @@ export default function AmbroisePartnersModern() {
         .nav-scrolled .nav-cta:hover,.nav-scrolled .nav-cta:active{background:var(--navy-hover)!important;border-color:var(--navy-hover);}
 
         /* ── HERO ── */
+        /* Headline set bottom-left, editorial, with the helix rising on the right */
         .hero{
           position:relative;min-height:100vh;min-height:100dvh;overflow:hidden;
-          display:flex;flex-direction:column;align-items:center;justify-content:center;
-          padding:0 4vw;color:#fff;
+          display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;
+          padding:0 2.5vw 11vh;color:#fff;
           /* Richer deep-navy background with subtle radial warmth for life-science feel */
           background:radial-gradient(ellipse 80% 60% at 50% 40%, #05122e 0%, #020a1e 50%, #010510 100%);
         }
@@ -949,33 +956,36 @@ export default function AmbroisePartnersModern() {
           opacity:0;
           transition:opacity 0.05s linear;
         }
+        .hero-shade{position:absolute;inset:0;z-index:2;pointer-events:none;
+          background:linear-gradient(90deg,rgba(3,10,36,.88) 0%,rgba(3,10,36,.55) 38%,rgba(3,10,36,0) 68%);}
         .hero-inner{
           position:relative;z-index:2;
-          max-width:1500px;
           padding-top:5rem;
           padding-bottom:0;
-          text-align:center;
+          text-align:left;
         }
         .hero-h1{
           font-family:var(--serif);font-weight:400;
-          font-size:var(--fs-display);
-          line-height:1.06;letter-spacing:-.015em;margin-bottom:1.4rem;
-          max-width:100%;margin-left:auto;margin-right:auto;
+          font-size:clamp(2.8rem,5.6vw,5.4rem);
+          line-height:1.04;letter-spacing:-.025em;margin-bottom:1.6rem;
+          max-width:100%;
           opacity:0;animation:fadeUp .9s .3s var(--ease) forwards;
         }
+        .hero-h1 em{color:#a9c4f5;}
         .hero-h1 strong{
           display:block;font-family:var(--serif);font-weight:400;font-style:italic;
           font-size:clamp(3.2rem,5.5vw,5.2rem);line-height:1.08;letter-spacing:-.02em;
         }
         .hero-tags{
-          display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;
-          margin:1.4rem 0 1.2rem;
+          display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-start;
+          margin:1.2rem 0 0;
           opacity:0;animation:fadeUp .9s .45s var(--ease) forwards;
         }
         .hero-tags span{
-          position:relative;font-size:var(--fs-body);font-weight:500;letter-spacing:.06em;
-          color:#fff;padding:0 .2rem;
+          position:relative;font-size:var(--fs-body);font-weight:400;letter-spacing:.02em;
+          color:rgba(255,255,255,.78);padding:0 .2rem;
         }
+        .hero-tags span:first-child{padding-left:0;}
         .hero-tags span:not(:last-child)::after{
           content:'';display:inline-block;width:1px;height:14px;
           background:rgba(255,255,255,.5);margin:0 .65rem;
@@ -988,43 +998,42 @@ export default function AmbroisePartnersModern() {
         .btn-secondary:hover{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.07);}
         .hero-footnote{margin-top:1.2rem;font-size:var(--fs-xs);color:rgba(255,255,255,.38);font-weight:400;opacity:0;animation:fadeUp .9s .9s var(--ease) forwards;}
 
-        .hero-content{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;will-change:opacity;}
-        .hero-bottom{display:flex;flex-direction:column;align-items:center;gap:1.4rem;}
+        .hero-content{position:relative;z-index:3;display:flex;flex-direction:column;align-items:flex-start;width:100%;max-width:1200px;margin:0 auto;will-change:opacity;}
+        .hero-bottom{display:flex;flex-direction:column;align-items:flex-start;gap:1.4rem;}
         .hero-tags span{text-shadow:0 1px 12px rgba(3,10,36,.6);}
 
         /* ── KEY FIGURES ── */
         #services{position:relative;z-index:3;}
 
         /* ── SERVICES CARDS ── */
-        .svc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;}
-        .svc-card{display:flex;flex-direction:column;gap:.9rem;border:1px solid var(--line);border-radius:var(--radius);padding:1.6rem 1.4rem 1.5rem;background:#fff;transition:border-color .25s,box-shadow .25s;}
-        .svc-card{position:relative;overflow:hidden;}
-        .svc-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--blue));transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease);}
-        .svc-card:hover{border-color:#c9d3e3;box-shadow:0 18px 40px rgba(3,10,36,.09);}
-        .svc-card.visible:hover{transform:translateY(-4px);}
-        .svc-card:hover::before{transform:scaleX(1);}
-        .svc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;}
-        .svc-icon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eaf0f8;color:var(--navy);transition:background .3s,color .3s;}
+        /* Services as an editorial index: one row per line of business, hairlines instead of boxes.
+           Columns: icon · name · description · scope. */
+        .svc-grid{display:flex;flex-direction:column;border-top:1px solid var(--navy);}
+        .svc-card{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1.55fr) minmax(0,.9fr);column-gap:2.2rem;align-items:start;padding:2rem 0;border-bottom:1px solid var(--line);}
+        .svc-top{padding-top:.1rem;}
+        .svc-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eaf0f8;color:var(--navy);transition:background .3s,color .3s;}
         .svc-card:hover .svc-icon{background:var(--navy);color:#fff;}
-        .svc-title{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;line-height:1.15;}
-        .svc-desc{color:var(--muted);font-size:var(--fs-body);line-height:1.65;font-weight:400;flex-grow:1;}
-        .svc-tags{display:flex;flex-wrap:wrap;list-style:none;padding-top:.9rem;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--muted);line-height:1.8;}
-        .svc-tags li:not(:last-child)::after{content:'·';margin:0 .45rem;color:#b5bfcf;}
+        .svc-title{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,1.9vw,1.75rem);letter-spacing:-.015em;line-height:1.15;padding-top:.2rem;}
+        .svc-desc{color:var(--muted);font-size:var(--fs-body);line-height:1.65;font-weight:400;}
+        .svc-tags{display:flex;flex-direction:column;list-style:none;font-size:var(--fs-small);color:var(--ink);line-height:1.9;padding-top:.15rem;}
 
         /* ── TEAM ── */
+        /* Team: same editorial grid as the other sections; photos, names and figures in the right column */
         .team-sec{background:var(--navy);color:#fff;padding:4.5rem 2.5vw 4.8rem;}
-        .team-head{text-align:center;max-width:820px;margin:0 auto 2.8rem;}
+        .team-sec > *{max-width:1200px;margin-left:auto;margin-right:auto;}
+        .team-head{margin-bottom:2.8rem;border-top-color:rgba(255,255,255,.14);}
         .team-sec .eyebrow{color:rgba(255,255,255,.6);}
         .team-sec .section-title{color:#fff;margin-left:0;}
-        .team-figures{display:flex;justify-content:center;gap:clamp(2.5rem,7vw,6rem);max-width:900px;margin:3.2rem auto 0;padding-top:2.2rem;border-top:1px solid rgba(255,255,255,.12);text-align:center;}
-        .team-figure{display:flex;flex-direction:column;gap:.3rem;}
-        .team-figure-value{font-family:var(--serif);font-size:var(--fs-h2);line-height:1;color:#fff;}
-        .team-figure-label{font-size:var(--fs-xs);color:rgba(255,255,255,.6);}
-        .team-figures-note{text-align:center;margin-top:1.2rem;font-size:var(--fs-xs);color:rgba(255,255,255,.4);}
-        .team-row{display:flex;justify-content:center;gap:clamp(3rem,9vw,8rem);flex-wrap:wrap;}
-        .member{display:flex;flex-direction:column;align-items:center;text-align:center;}
-        .member-photo{width:clamp(150px,13vw,190px);height:auto;aspect-ratio:1;border-radius:50%;object-fit:cover;box-shadow:0 0 0 6px rgba(255,255,255,.06);}
-        .member-name{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;margin-top:1.3rem;}
+        .team-row,.team-figures,.team-figures-note{padding-left:calc(220px + 2.5rem);}
+        .team-figures{display:flex;justify-content:flex-start;gap:clamp(2.5rem,6vw,5rem);margin-top:3.2rem;padding-top:2.2rem;border-top:1px solid rgba(255,255,255,.14);}
+        .team-figure{display:flex;flex-direction:column;gap:.45rem;}
+        .team-figure-value{font-family:var(--serif);font-size:clamp(2rem,3vw,2.6rem);line-height:1;letter-spacing:-.02em;color:#fff;}
+        .team-figure-label{font-size:var(--fs-small);color:rgba(255,255,255,.62);}
+        .team-figures-note{margin-top:1.2rem;font-size:var(--fs-xs);color:rgba(255,255,255,.5);}
+        .team-row{display:flex;justify-content:flex-start;gap:clamp(1.6rem,3vw,2.4rem);flex-wrap:wrap;}
+        .member{display:flex;flex-direction:column;align-items:flex-start;text-align:left;}
+        .member-photo{width:clamp(170px,16vw,220px);height:auto;aspect-ratio:1;border-radius:var(--radius);object-fit:cover;object-position:50% 25%;}
+        .member-name{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;margin-top:1.1rem;}
         .member-role{font-size:var(--fs-xs);font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:.35rem;}
         .member-link{display:inline-flex;align-items:center;gap:.4rem;margin-top:.8rem;font-size:var(--fs-small);font-weight:500;color:rgba(255,255,255,.75);transition:color .2s;}
         .member-link:hover{color:#fff;}
@@ -1033,9 +1042,12 @@ export default function AmbroisePartnersModern() {
         .section{max-width:1200px;margin:0 auto;padding:7rem 2.5vw;color:var(--ink);}
         .section-bg{background:var(--white);}
         .eyebrow{display:block;font-family:var(--sans);font-size:var(--fs-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
-        .section-title{font-family:var(--serif);font-weight:400;font-size:var(--fs-h2);line-height:1.1;letter-spacing:-.02em;margin-bottom:.3rem;margin-left:-.05em;}
-        .section-lede{font-family:var(--sans);color:var(--muted);font-size:var(--fs-lead);max-width:100%;font-weight:400;line-height:1.65;letter-spacing:-.01em;}
-        .section-head{margin-bottom:2rem;}
+        .section-title{text-wrap:balance;font-family:var(--serif);font-weight:400;font-size:clamp(2rem,3.4vw,3.2rem);line-height:1.06;letter-spacing:-.025em;margin-bottom:.6rem;margin-left:-.05em;}
+        .section-lede{font-family:var(--sans);color:var(--muted);font-size:var(--fs-lead);max-width:62ch;font-weight:400;line-height:1.65;letter-spacing:-.01em;}
+        /* Editorial head: the eyebrow sits in a narrow left column under a hairline, title and lede on the right */
+        .section-head{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);column-gap:2.5rem;margin-bottom:2.8rem;padding-top:1.3rem;border-top:1px solid var(--line);}
+        .section-head .eyebrow{grid-column:1;grid-row:1 / span 2;padding-top:.15rem;}
+        .section-head > :not(.eyebrow){grid-column:2;}
 
         /* ── APPROACH ── */
         .approach-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2.4rem;}
@@ -1058,10 +1070,12 @@ export default function AmbroisePartnersModern() {
         .value-desc{color:var(--muted);font-size:var(--fs-body);line-height:1.7;font-weight:400;}
 
         /* ── METHOD ── */
-        .method-list{border-top:1px solid var(--line);}
-        .method-step{display:grid;grid-template-columns:70px 1fr;align-items:center;gap:1rem;padding:.55rem 0;border-bottom:1px solid var(--line);}
+        /* Process: same index rows as Services — number · step · what happens */
+        .method-list{border-top:1px solid var(--navy);}
+        .method-step{display:grid;grid-template-columns:56px minmax(0,1fr);align-items:baseline;column-gap:2.2rem;padding:1.5rem 0;border-bottom:1px solid var(--line);}
         .step-num{font-family:var(--serif);font-style:normal;font-size:var(--fs-h3);color:#162d50;font-weight:400;letter-spacing:-.02em;}
-        .step-body h4{font-family:var(--serif);font-weight:400;font-size:var(--fs-h3);letter-spacing:-.01em;margin-bottom:.3rem;}
+        .step-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.45fr);column-gap:2.2rem;align-items:baseline;}
+        .step-body h4{font-family:var(--serif);font-weight:400;font-size:clamp(1.25rem,1.6vw,1.5rem);letter-spacing:-.015em;line-height:1.2;}
         .step-body p{color:var(--muted);font-size:var(--fs-body);line-height:1.6;font-weight:400;}
 
         /* ── ABOUT ── */
@@ -1194,7 +1208,15 @@ export default function AmbroisePartnersModern() {
           .method-step{grid-template-columns:60px 1fr;}
           .step-arrow{display:none;}
           .svc-tab{font-size:var(--fs-body);padding:0 0 14px 0;}
-          .svc-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+          .section-head{grid-template-columns:1fr;}
+          .section-head .eyebrow{grid-row:auto;margin-bottom:.9rem;}
+          .section-head > :not(.eyebrow){grid-column:1;}
+          .svc-card{grid-template-columns:44px minmax(0,1fr);row-gap:.7rem;column-gap:1.2rem;}
+          .svc-desc,.svc-tags{grid-column:2;}
+          .svc-tags{flex-direction:row;flex-wrap:wrap;font-size:var(--fs-xs);color:var(--muted);}
+          .svc-tags li:not(:last-child)::after{content:'·';margin:0 .45rem;color:#b5bfcf;}
+          .team-row,.team-figures,.team-figures-note{padding-left:0;}
+          .step-body{grid-template-columns:1fr;row-gap:.35rem;}
           .domains-grid{height:300px;gap:6px;}
           .domain-card--active{flex-grow:2;}
           .dalt-carousel{height:400px;}
@@ -1217,7 +1239,11 @@ export default function AmbroisePartnersModern() {
           .hero-inner{padding-top:3rem;padding-bottom:1rem;}
           .btn-primary,.btn-secondary{padding:.65rem 1.3rem;font-size:var(--fs-xs);}
           .hero-tags span{font-size:var(--fs-xs);}
-          .hero-tags{gap:.35rem 1rem;max-width:340px;margin-left:auto;margin-right:auto;}
+          .hero-tags{gap:.35rem 1rem;max-width:340px;}
+          .hero-tags span{padding:0;}
+          .hero{padding-bottom:9vh!important;}
+          .hero-shade{background:linear-gradient(0deg,rgba(3,10,36,.9) 0%,rgba(3,10,36,.6) 45%,rgba(3,10,36,.15) 100%);}
+          .nav-outer{padding:10px 4vw 0;}
           .hero-tags span:not(:last-child)::after{display:none;}
           .hero-content{padding:0 16px;}
           .hero-line-1,.hero-line-2{display:inline!important;}
@@ -1234,7 +1260,7 @@ export default function AmbroisePartnersModern() {
           .team-figures{gap:1.4rem;margin-top:2.4rem;}
           .team-figure-value{font-size:1.5rem;}
           .svc-grid{grid-template-columns:1fr;}
-          .svc-card{padding:1.5rem 1.3rem 1.4rem;}
+          .svc-card{padding:1.5rem 0;}
           .svc-title{font-size:var(--fs-h3);}
           .svc-desc{font-size:var(--fs-body);}
           .team-row{gap:2.2rem;}
@@ -1369,6 +1395,8 @@ export default function AmbroisePartnersModern() {
       {/* HERO */}
       <header className="hero" id="top" ref={heroRef}>
         <canvas id="hero-canvas" ref={canvasRef} />
+        {/* Darkens the left of the hero so the headline stays readable over the helix */}
+        <div className="hero-shade" aria-hidden="true" />
         <div className="hero-content">
         <div className="hero-inner">
           <h1 className="hero-h1">

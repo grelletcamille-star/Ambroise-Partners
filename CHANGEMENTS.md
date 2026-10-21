@@ -27,7 +27,14 @@ Copie du site d'origine (`Ambroise-Partners-main`, qui reste intacte) avec les c
 - **Logo** : monogramme redessiné en octobre 2026 : le A du logo d'origine, avec un P plus petit (52 %) niché sous sa jambe droite, les deux pieds réunis. Dans la navigation, le footer, les pages secondaires, la favicon, l'icône Apple et l'image de partage. Le dessin est dans `app/components/LogoMark.tsx`.
 - **LinkedIn** : liens vers les profils de Camille et Thomas et vers la page entreprise (footer, pages secondaires, données structurées).
 - **Image de partage** : `public/og-image.png` (1200×630) remplace le SVG, que LinkedIn n'affiche pas.
+- **Refonte visuelle A+B (21 octobre 2026)**, même texte et même contenu, mix des directions « Hélice » et « Éditorial » :
+  - **hero** : titre aligné à gauche en bas de l'écran, plus grand, avec la fin en italique bleu glacier ; l'hélice a deux brins (blanc et bleu glacier), est plus dense et tourne lentement sur elle-même ; un voile sombre à gauche garde le titre lisible ;
+  - **navigation** : barre flottante à bords fins, en verre sur le hero, blanche ensuite ;
+  - **titres de section** : sur-titre dans une colonne étroite à gauche sous un filet, titre et chapeau à droite, titres plus grands ;
+  - **Services** et **Process** : lignes séparées par des filets au lieu de cartes (icône, nom, description, périmètre) ;
+  - **Équipe** : photos carrées à coins arrondis au lieu de ronds, alignées à gauche avec les chiffres clés.
 - **Bugs corrigés** :
+  - le bouton « Contact us » de la navigation n'avait pas son fond blanc sur le hero : un `!important` dans une liste de `transition` faisait supprimer toute la règle au build ;
   - le lien « Back » des pages légales pointait vers `/2` ;
   - l'écran de chargement bleu restait affiché sur les pages légales.
 
